@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0123456789abcdef0123456789abcdef, type: 3}
+  m_Name: DefaultUILayoutConfig
+  healthBarAnchorMin: {x: 0, y: 1}
+  healthBarAnchorMax: {x: 0, y: 1}
+  healthBarPosition: {x: 100, y: -50}
+  healthBarSize: {x: 250, y: 40}
+  scoreUIAnchorMin: {x: 1, y: 1}
+  scoreUIAnchorMax: {x: 1, y: 1}
+  scoreUIPosition: {x: -100, y: -50}
+  scoreUISize: {x: 300, y: 40}
+  swordStatusAnchorMin: {x: 0.5, y: 0}
+  swordStatusAnchorMax: {x: 0.5, y: 0}
+  swordStatusPosition: {x: 0, y: 80}
+  swordStatusSize: {x: 250, y: 50}
+  positionTolerance: 1
+  enableLayoutDebug: 0
