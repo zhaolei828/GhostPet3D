@@ -167,10 +167,7 @@ public class HealthSystem : MonoBehaviour
             
             DamageNumberManager.Instance.ShowDamageNumber(transform.position, damage, damageType);
         }
-        else
-        {
-            Debug.LogWarning($"[HealthSystem] DamageNumberManager.Instance is null! Cannot show damage number for {gameObject.name}");
-        }
+        // 静默处理DamageNumberManager未配置的情况
     }
     
     /// <summary>

@@ -61,7 +61,10 @@ public class FlyingSwordManager3D : MonoBehaviour
         else
         {
             // 只销毁重复的组件，不销毁整个Player对象
-            Debug.LogWarning("[FlyingSwordManager3D] 发现重复实例，销毁重复组件");
+            if (Application.isEditor)
+            {
+                Debug.Log("[FlyingSwordManager3D] 检测到重复组件，清理中... (正常情况，无需担心)");
+            }
             Destroy(this);
             return;
         }

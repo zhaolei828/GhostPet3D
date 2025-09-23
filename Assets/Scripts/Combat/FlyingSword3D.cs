@@ -13,7 +13,7 @@ public class FlyingSword3D : MonoBehaviour
     
     [Header("3D移动设置")]
     [SerializeField] private bool usePhysics = false;
-    [SerializeField] private float rotationSpeed = 360f;
+    // [SerializeField] private float rotationSpeed = 360f; // 预留功能，暂未使用
     [SerializeField] private AnimationCurve speedCurve = AnimationCurve.Linear(0, 1, 1, 1);
     
     [Header("视觉效果")]

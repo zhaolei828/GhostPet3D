@@ -61,6 +61,12 @@ public class Enemy3DAI : MonoBehaviour
     {
         if (!IsAlive) return;
         
+        // 安全检查：确保NavMeshAgent在NavMesh上
+        if (navAgent != null && !navAgent.isOnNavMesh)
+        {
+            return; // 如果不在NavMesh上，跳过AI更新
+        }
+        
         UpdateAI();
     }
     
@@ -105,7 +111,7 @@ public class Enemy3DAI : MonoBehaviour
     
     private void MoveTowardsPlayer()
     {
-        if (navAgent != null && player != null)
+        if (navAgent != null && player != null && navAgent.isOnNavMesh)
         {
             navAgent.SetDestination(player.position);
         }
@@ -113,7 +119,7 @@ public class Enemy3DAI : MonoBehaviour
     
     private void StopMoving()
     {
-        if (navAgent != null)
+        if (navAgent != null && navAgent.isOnNavMesh)
         {
             navAgent.ResetPath();
         }
