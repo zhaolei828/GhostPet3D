@@ -186,12 +186,6 @@ public class FlyingSword3D : MonoBehaviour
             enemyHealth.TakeDamage(damage);
         }
         
-        // 对Enemy3DAI造成伤害 (临时改为简化版本)
-        var enemy3DAI = target.GetComponent<Enemy3DAI_Simple>();
-        if (enemy3DAI != null)
-        {
-            enemy3DAI.TakeDamage(damage);
-        }
         
         // 创建击中特效
         CreateHitEffect();
