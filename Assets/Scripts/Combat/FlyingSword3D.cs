@@ -6,10 +6,10 @@ using UnityEngine;
 public class FlyingSword3D : MonoBehaviour
 {
     [Header("飞剑设置")]
-    [SerializeField] private float speed = 10f;
-    [SerializeField] private float damage = 1f;
+    [SerializeField] private float speed = 2f;
+    [SerializeField] private float damage = 25f; // 增加伤害，让敌人能够快速死亡
     [SerializeField] private float lifeTime = 5f;
-    [SerializeField] private LayerMask enemyLayer = 1 << 8; // Enemy层
+    [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级
     
     [Header("3D移动设置")]
     [SerializeField] private bool usePhysics = false;
@@ -52,8 +52,8 @@ public class FlyingSword3D : MonoBehaviour
     
     private void Start()
     {
-        // 启动时开始生命周期倒计时
-        Destroy(gameObject, lifeTime);
+        // 什么都不做，生命周期在Launch方法中处理
+        Debug.Log($"[FlyingSword3D] Start方法执行，IsActive: {IsActive}");
     }
     
     private void Update()
@@ -61,6 +61,12 @@ public class FlyingSword3D : MonoBehaviour
         if (!IsActive || hasHit) return;
         
         currentLifeTime += Time.deltaTime;
+        
+        // 每0.5秒打印一次位置信息用于调试
+        if (Time.time % 0.5f < 0.1f)
+        {
+            Debug.Log($"[FlyingSword3D] 飞剑移动中: 位置{transform.position}, 方向{direction}, IsActive:{IsActive}");
+        }
         
         // 更新移动
         UpdateMovement();
@@ -92,11 +98,14 @@ public class FlyingSword3D : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(direction);
         }
         
-        // 启用物理（如果使用）
-        if (usePhysics && rb != null)
+        // 启用物理和碰撞检测
+        if (rb != null)
         {
-            rb.isKinematic = false;
-            rb.linearVelocity = direction * speed;
+            rb.isKinematic = false; // 必须为false才能触发OnTriggerEnter
+            if (usePhysics)
+            {
+                rb.linearVelocity = direction * speed;
+            }
         }
         
         // 启用粒子效果
@@ -105,7 +114,7 @@ public class FlyingSword3D : MonoBehaviour
             trailEffect.Play();
         }
         
-        Debug.Log($"[FlyingSword3D] 发射飞剑，方向: {direction}");
+        Debug.Log($"[FlyingSword3D] 发射飞剑，方向: {direction}, IsActive: {IsActive}, enabled: {enabled}");
     }
     
     /// <summary>
@@ -118,16 +127,50 @@ public class FlyingSword3D : MonoBehaviour
         lifeTime = newLifeTime;
     }
     
+    /// <summary>
+    /// 重置飞剑状态（用于对象池回收）
+    /// </summary>
+    public void ResetSword()
+    {
+        IsActive = false;
+        hasHit = false;
+        currentLifeTime = 0f;
+        direction = Vector3.zero;
+        target = null;
+        
+        // 重置位置和旋转
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            // kinematic body不需要设置velocity，Unity会自动处理
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+        }
+        
+        // 停止粒子效果
+        if (trailEffect != null)
+        {
+            trailEffect.Stop();
+        }
+        
+        Debug.Log("[FlyingSword3D] 飞剑状态已重置");
+    }
+    
     private void UpdateMovement()
     {
         if (usePhysics && rb != null)
         {
             // 使用物理移动（已在Launch中设置velocity）
+            Debug.Log($"[FlyingSword3D] 使用物理移动, velocity: {rb.linearVelocity}");
             return;
         }
         
         // 手动移动
         float currentSpeed = speed * speedCurve.Evaluate(currentLifeTime / lifeTime);
+        Debug.Log($"[FlyingSword3D] 手动移动 - direction: {direction}, speed: {speed}, currentSpeed: {currentSpeed}");
         
         if (target != null && Vector3.Distance(transform.position, target.position) > 0.5f)
         {
@@ -141,8 +184,11 @@ public class FlyingSword3D : MonoBehaviour
             }
         }
         
-        // 移动
-        transform.position += direction * currentSpeed * Time.deltaTime;
+        // 强制移动，即使方向为零也要记录
+        Vector3 movement = direction * currentSpeed * Time.deltaTime;
+        Vector3 oldPosition = transform.position;
+        transform.position += movement;
+        Debug.Log($"[FlyingSword3D] 位置移动: {oldPosition} -> {transform.position}, movement: {movement}");
     }
     
     private void UpdateRotation()
@@ -156,15 +202,28 @@ public class FlyingSword3D : MonoBehaviour
     
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"[FlyingSword3D] OnTriggerEnter检测到碰撞: {other.name}, layer: {other.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}");
+        HandleCollision(other);
+    }
+    
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log($"[FlyingSword3D] OnCollisionEnter检测到碰撞: {collision.gameObject.name}, layer: {collision.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}");
+        HandleCollision(collision.collider);
+    }
+    
+    private void HandleCollision(Collider other)
+    {
         if (hasHit || !IsActive) return;
         
         // 检查是否击中敌人
         if (((1 << other.gameObject.layer) & enemyLayer) != 0)
         {
+            Debug.Log($"[FlyingSword3D] 成功击中敌人: {other.name}!");
             HitTarget(other.gameObject);
         }
-        // 检查是否击中障碍物
-        else if (other.CompareTag("Obstacle") || other.CompareTag("Wall"))
+        // 检查是否击中障碍物（安全检查标签是否存在）
+        else if (HasTag(other.gameObject, "Obstacle") || HasTag(other.gameObject, "Wall"))
         {
             HitObstacle();
         }
@@ -177,13 +236,18 @@ public class FlyingSword3D : MonoBehaviour
         hasHit = true;
         IsActive = false;
         
-        Debug.Log($"[FlyingSword3D] 击中目标: {target.name}");
+        Debug.Log($"[FlyingSword3D] 击中目标: {target.name}，位置: {target.transform.position}");
         
         // 对目标造成伤害
         var enemyHealth = target.GetComponent<HealthSystem>();
         if (enemyHealth != null)
         {
+            Debug.Log($"[FlyingSword3D] 对 {target.name} 造成 {damage} 点伤害");
             enemyHealth.TakeDamage(damage);
+        }
+        else
+        {
+            Debug.LogWarning($"[FlyingSword3D] {target.name} 没有HealthSystem组件");
         }
         
         
@@ -288,6 +352,22 @@ public class FlyingSword3D : MonoBehaviour
         if (trailEffect != null)
         {
             trailEffect.Stop();
+        }
+    }
+    
+    /// <summary>
+    /// 安全检查游戏对象是否有指定标签
+    /// </summary>
+    private bool HasTag(GameObject obj, string tagName)
+    {
+        try
+        {
+            return obj.CompareTag(tagName);
+        }
+        catch (UnityException)
+        {
+            // 标签不存在，返回false
+            return false;
         }
     }
     

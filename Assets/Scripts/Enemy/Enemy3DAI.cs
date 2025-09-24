@@ -27,6 +27,7 @@ public class Enemy3DAI : MonoBehaviour
     // AI状态
     private float lastAttackTime;
     private bool isAttacking = false;
+    // isInAttackRange字段已移除，直接使用距离计算
     
     // 属性
     public bool IsAlive => healthSystem != null && healthSystem.IsAlive;
@@ -44,6 +45,8 @@ public class Enemy3DAI : MonoBehaviour
             navAgent.stoppingDistance = stopDistance;
             navAgent.autoBraking = true;
         }
+        
+        // NavMesh将在Unity编辑器中手动烘焙
     }
     
     private void Start()
@@ -64,6 +67,7 @@ public class Enemy3DAI : MonoBehaviour
         // 安全检查：确保NavMeshAgent在NavMesh上
         if (navAgent != null && !navAgent.isOnNavMesh)
         {
+            Debug.LogWarning("[Enemy3DAI] NavMeshAgent不在NavMesh上。请确保场景中已正确烘焙NavMesh。");
             return; // 如果不在NavMesh上，跳过AI更新
         }
         
@@ -138,6 +142,19 @@ public class Enemy3DAI : MonoBehaviour
         lastAttackTime = Time.time;
         isAttacking = true;
         
+        // 再次检查攻击距离（防止玩家已经远离）
+        if (player != null)
+        {
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+            if (distanceToPlayer > attackRange)
+            {
+                // 玩家已经超出攻击范围，取消攻击
+                Debug.Log($"[Enemy3DAI] 玩家超出攻击范围 ({distanceToPlayer:F1}m > {attackRange}m)，取消攻击");
+                ResetAttack();
+                return;
+            }
+        }
+        
         // 朝向玩家
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
         transform.rotation = Quaternion.LookRotation(directionToPlayer);
@@ -149,7 +166,7 @@ public class Enemy3DAI : MonoBehaviour
             if (playerHealth != null)
             {
                 playerHealth.TakeDamage(attackDamage);
-                Debug.Log($"[Enemy3DAI] 攻击玩家造成 {attackDamage} 伤害");
+                Debug.Log($"[Enemy3DAI] 攻击玩家造成 {attackDamage} 伤害，距离: {Vector3.Distance(transform.position, player.position):F1}m");
             }
         }
         
@@ -177,11 +194,112 @@ public class Enemy3DAI : MonoBehaviour
             enemyCollider.enabled = false;
         }
         
-        Debug.Log("[Enemy3DAI] 敌人死亡");
+        Debug.Log("[Enemy3DAI] 敌人死亡，开始沉入地下");
         
-        // 可以添加死亡效果
-        // 几秒后销毁对象
-        Destroy(gameObject, 3f);
+        // 开始死亡动画（沉入地下）
+        StartCoroutine(SinkIntoGroundAndRecycle());
+    }
+    
+    /// <summary>
+    /// 沉入地下并回收到对象池
+    /// </summary>
+    private System.Collections.IEnumerator SinkIntoGroundAndRecycle()
+    {
+        Vector3 originalPosition = transform.position;
+        Vector3 targetPosition = originalPosition + Vector3.down * 2f; // 向下沉2米
+        float sinkDuration = 1.5f; // 沉入时间
+        float elapsed = 0f;
+        
+        // 获取MeshRenderer用于逐渐变透明
+        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        Material originalMaterial = null;
+        if (meshRenderer != null && meshRenderer.material != null)
+        {
+            // 创建材质副本以避免影响原材质
+            originalMaterial = meshRenderer.material;
+            meshRenderer.material = new Material(originalMaterial);
+        }
+        
+        while (elapsed < sinkDuration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / sinkDuration;
+            
+            // 向下移动
+            transform.position = Vector3.Lerp(originalPosition, targetPosition, progress);
+            
+            // 逐渐变透明
+            if (meshRenderer != null && meshRenderer.material != null)
+            {
+                Color color = meshRenderer.material.color;
+                color.a = Mathf.Lerp(1f, 0f, progress);
+                meshRenderer.material.color = color;
+            }
+            
+            yield return null;
+        }
+        
+        Debug.Log("[Enemy3DAI] 敌人已沉入地下，开始回收");
+        
+        // 回收到对象池或销毁
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.RecycleEnemy(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+    
+    /// <summary>
+    /// 延迟回收到对象池（备用方法）
+    /// </summary>
+    private System.Collections.IEnumerator DelayedRecycle()
+    {
+        yield return new WaitForSeconds(2f); // 死亡动画时间
+        
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.RecycleEnemy(gameObject);
+        }
+    }
+    
+    /// <summary>
+    /// 重置AI状态（用于对象池回收重用）
+    /// </summary>
+    public void ResetAI()
+    {
+        // 重置状态
+        lastAttackTime = 0f;
+        
+        // 重新查找玩家
+        FindPlayer();
+        
+        // 重置NavMeshAgent
+        if (navAgent != null)
+        {
+            navAgent.isStopped = false;
+            navAgent.enabled = true;
+        }
+        
+        // 重置碰撞器
+        Collider enemyCollider = GetComponent<Collider>();
+        if (enemyCollider != null)
+        {
+            enemyCollider.enabled = true;
+        }
+        
+        // 重置外观（恢复透明度和材质）
+        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        if (meshRenderer != null && meshRenderer.material != null)
+        {
+            Color color = meshRenderer.material.color;
+            color.a = 1f; // 恢复不透明
+            meshRenderer.material.color = color;
+        }
+        
+        Debug.Log("[Enemy3DAI] AI状态已重置");
     }
     
     private void OnDestroy()

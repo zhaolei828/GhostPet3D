@@ -16,9 +16,9 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Attack",
+                    "name": "Jump",
                     "type": "Button",
-                    "id": "6c2ab1b8-8984-453a-af3d-a3c78ae1679a",
+                    "id": "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -138,23 +138,12 @@
                 },
                 {
                     "name": "",
-                    "id": "6d7e8f9a-0b1c-2d3e-4f5a-6b7c8d9e0f1a",
+                    "id": "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
                     "path": "<Keyboard>/space",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Attack",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b",
-                    "path": "<Mouse>/leftButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Attack",
+                    "action": "Jump",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -12,6 +12,13 @@ public class Player3DController : MonoBehaviour
     [SerializeField] private LayerMask groundMask = 1;
     [SerializeField, Range(0.1f, 2.0f)] private float playerScale = 0.2f;
     
+    [Header("边界限制")]
+    [SerializeField] private float mapBoundary = 9f; // Ground是20x20，玩家活动范围限制在18x18内
+    
+    [Header("自动攻击")]
+    [SerializeField] private float autoAttackRange = 8f;
+    [SerializeField] private float autoAttackCooldown = 1f;
+    
     [Header("组件引用")]
     [SerializeField] private InputActionAsset inputActions;
     
@@ -34,8 +41,13 @@ public class Player3DController : MonoBehaviour
     // 玩家状态
     public bool IsAlive { get; private set; } = true;
     
+    // 自动攻击相关
+    private float lastAutoAttackTime;
+    
     private void Awake()
     {
+        Debug.Log("[Player3DController] Awake开始执行");
+        
         // 获取3D组件
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
@@ -52,10 +64,12 @@ public class Player3DController : MonoBehaviour
         // 应用玩家缩放
         transform.localScale = Vector3.one * playerScale;
         
-        // 订阅死亡事件
+        // 订阅死亡事件并设置玩家血量
         if (healthSystem != null)
         {
             healthSystem.OnDeath += Die;
+            // 给玩家设置更多血量（200血）
+            healthSystem.SetMaxHealth(200f, true);
         }
     }
     
@@ -69,7 +83,6 @@ public class Player3DController : MonoBehaviour
                 playerMap.Enable();
                 var moveAction = playerMap.FindAction("Move");
                 var jumpAction = playerMap.FindAction("Jump");
-                var attackAction = playerMap.FindAction("Attack");
                 
                 if (moveAction != null)
                 {
@@ -80,11 +93,6 @@ public class Player3DController : MonoBehaviour
                 if (jumpAction != null)
                 {
                     jumpAction.performed += OnJump;
-                }
-                
-                if (attackAction != null)
-                {
-                    attackAction.performed += OnAttack;
                 }
             }
         }
@@ -102,7 +110,6 @@ public class Player3DController : MonoBehaviour
             {
                 var moveAction = playerMap.FindAction("Move");
                 var jumpAction = playerMap.FindAction("Jump");
-                var attackAction = playerMap.FindAction("Attack");
                 
                 if (moveAction != null)
                 {
@@ -115,11 +122,6 @@ public class Player3DController : MonoBehaviour
                     jumpAction.performed -= OnJump;
                 }
                 
-                if (attackAction != null)
-                {
-                    attackAction.performed -= OnAttack;
-                }
-                
                 playerMap.Disable();
             }
         }
@@ -130,6 +132,25 @@ public class Player3DController : MonoBehaviour
     private void Update()
     {
         CheckGrounded();
+        HandleAutoAttack();
+        
+        // 测试玩家死亡重生 - 按Jump键
+        if (inputActions != null && inputActions["Jump"].WasPressedThisFrame())
+        {
+            Debug.Log("[Player3DController] Jump键按下，测试玩家死亡");
+            if (healthSystem != null)
+            {
+                healthSystem.TakeDamage(999f);
+            }
+        }
+        
+        // 删除了旧的Input系统测试代码
+        
+        // 每2秒打印一次状态信息
+        if (Time.time % 2f < 0.1f)
+        {
+            Debug.Log($"[Player3DController] Update运行中, IsAlive: {IsAlive}, 血量: {healthSystem?.CurrentHealth}/{healthSystem?.MaxHealth}");
+        }
     }
     
     private void FixedUpdate()
@@ -167,6 +188,22 @@ public class Player3DController : MonoBehaviour
         
         // 应用移动
         Vector3 moveVelocity = movement * moveSpeed;
+        
+        // 检查边界限制
+        Vector3 newPosition = transform.position + moveVelocity * Time.fixedDeltaTime;
+        if (Mathf.Abs(newPosition.x) > mapBoundary || Mathf.Abs(newPosition.z) > mapBoundary)
+        {
+            // 如果移动会超出边界，限制移动方向
+            if (Mathf.Abs(newPosition.x) > mapBoundary)
+            {
+                moveVelocity.x = 0;
+            }
+            if (Mathf.Abs(newPosition.z) > mapBoundary)
+            {
+                moveVelocity.z = 0;
+            }
+        }
+        
         rb.linearVelocity = new Vector3(moveVelocity.x, rb.linearVelocity.y, moveVelocity.z);
         
         // 根据移动方向旋转玩家
@@ -196,16 +233,72 @@ public class Player3DController : MonoBehaviour
         jumpInput = true;
     }
     
-    private void OnAttack(InputAction.CallbackContext context)
+    /// <summary>
+    /// 自动攻击处理
+    /// </summary>
+    private void HandleAutoAttack()
     {
         if (!IsAlive) return;
-        Debug.Log("玩家攻击！");
-        // TODO: 实现3D攻击逻辑
+        if (Time.time < lastAutoAttackTime + autoAttackCooldown) return;
+        
+        // 寻找攻击范围内的敌人
+        Transform nearestEnemy = FindNearestEnemyInRange();
+        if (nearestEnemy == null) 
+        {
+            // 每5秒打印一次调试信息
+            if (Time.time % 5f < 0.1f)
+            {
+                Debug.Log($"[Player3DController] 没有找到攻击范围内的敌人，攻击范围: {autoAttackRange}米");
+            }
+            return;
+        }
+        
+        Debug.Log($"[Player3DController] 找到敌人: {nearestEnemy.name}，距离: {Vector3.Distance(transform.position, nearestEnemy.position):F1}米");
+        
+        // 优先使用环绕飞剑攻击
+        OrbitingSwordManager orbitManager = OrbitingSwordManager.Instance;
+        if (orbitManager != null)
+        {
+            Vector3 directionToEnemy = (nearestEnemy.position - transform.position).normalized;
+            bool launched = orbitManager.LaunchNearestSword(directionToEnemy, nearestEnemy);
+            
+            if (launched)
+            {
+                lastAutoAttackTime = Time.time;
+                Debug.Log($"[Player3DController] 环绕飞剑自动攻击敌人: {nearestEnemy.name}");
+                return;
+            }
+        }
     }
     
     private void OnTouchMove(Vector2 direction)
     {
         touchMoveInput = direction;
+    }
+    
+    /// <summary>
+    /// 寻找攻击范围内最近的敌人
+    /// </summary>
+    private Transform FindNearestEnemyInRange()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        Transform nearest = null;
+        float nearestDistance = autoAttackRange;
+        
+        foreach (GameObject enemy in enemies)
+        {
+            if (enemy != null && enemy.activeInHierarchy)
+            {
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance <= autoAttackRange && distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearest = enemy.transform;
+                }
+            }
+        }
+        
+        return nearest;
     }
     
     public void Die()

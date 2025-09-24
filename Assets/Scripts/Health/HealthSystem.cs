@@ -7,7 +7,7 @@ using System;
 public class HealthSystem : MonoBehaviour
 {
     [Header("血量设置")]
-    [SerializeField] private float maxHealth = 100f;    // 最大血量
+    [SerializeField] private float maxHealth = 50f;    // 最大血量，敌人默认50血
     [SerializeField] private float currentHealth;       // 当前血量
     [SerializeField] private bool isInvulnerable = false; // 是否无敌状态
     
@@ -167,7 +167,10 @@ public class HealthSystem : MonoBehaviour
             
             DamageNumberManager.Instance.ShowDamageNumber(transform.position, damage, damageType);
         }
-        // 静默处理DamageNumberManager未配置的情况
+        else
+        {
+            Debug.LogWarning($"[HealthSystem] DamageNumberManager.Instance is null! Cannot show damage number for {gameObject.name}");
+        }
     }
     
     /// <summary>
@@ -179,5 +182,17 @@ public class HealthSystem : MonoBehaviour
         {
             DamageNumberManager.Instance.ShowHealingNumber(transform.position, healAmount);
         }
+    }
+    
+    /// <summary>
+    /// 重置到满血状态（用于对象池回收重用）
+    /// </summary>
+    public void ResetToFull()
+    {
+        currentHealth = maxHealth;
+        isInvulnerable = false;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        
+        Debug.Log($"{gameObject.name} 血量已重置到满血: {currentHealth}");
     }
 }

@@ -7,8 +7,8 @@ public class DamageNumberPool : MonoBehaviour
 {
     [Header("池配置")]
     [SerializeField] private GameObject damageNumberPrefab;
-    [SerializeField] private int initialPoolSize = 20;
-    [SerializeField] private int maxPoolSize = 100;
+    [SerializeField] private int initialPoolSize = 100;
+    [SerializeField] private int maxPoolSize = 300;
     [SerializeField] private bool allowPoolGrowth = true;
     [SerializeField] private bool enableDebugLog = false;
     
@@ -35,12 +35,19 @@ public class DamageNumberPool : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            InitializePool();
+            Debug.Log("[DamageNumberPool] 单例已初始化");
         }
         else
         {
+            Debug.Log("[DamageNumberPool] 发现重复实例，销毁");
             Destroy(gameObject);
         }
+    }
+
+    private void Start()
+    {
+        // 对象池已禁用，DamageNumberManager直接创建伤害数字
+        Debug.Log("[DamageNumberPool] 对象池已禁用，使用直接创建模式");
     }
     
     /// <summary>
@@ -53,10 +60,15 @@ public class DamageNumberPool : MonoBehaviour
         poolContainer.transform.SetParent(transform);
         poolParent = poolContainer.transform;
         
-        // 如果没有设置预制体，创建默认的
+        // 强制创建默认预制体（确保工作）
         if (damageNumberPrefab == null)
         {
             CreateDefaultDamageNumberPrefab();
+            Debug.Log("[DamageNumberPool] 强制创建了默认伤害数字预制体");
+        }
+        else
+        {
+            Debug.Log("[DamageNumberPool] 使用已设置的预制体: " + damageNumberPrefab.name);
         }
         
         // 验证预制体有DamageNumber组件
@@ -268,6 +280,76 @@ public class DamageNumberPool : MonoBehaviour
             Debug.Log($"[DamageNumberPool] OnDestroy: {damageNumber.name}");
     }
     
+    /// <summary>
+    /// 强制创建对象池（绕过预制体问题）
+    /// </summary>
+    private void ForceCreatePool()
+    {
+        Debug.Log("[DamageNumberPool] 强制创建对象池，绕过预制体问题");
+        
+        // 创建池容器
+        GameObject poolContainer = new GameObject("DamageNumberPool_Container");
+        poolContainer.transform.SetParent(transform);
+        poolParent = poolContainer.transform;
+        
+        // 找到或创建Canvas
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null)
+        {
+            GameObject canvasObj = new GameObject("DamageCanvas");
+            canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100; // 确保在最上层
+            canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
+            canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            Debug.Log("[DamageNumberPool] 创建了新的Canvas");
+        }
+        
+        // 创建一个临时预制体
+        GameObject tempPrefab = new GameObject("TempDamageNumberPrefab");
+        tempPrefab.AddComponent<DamageNumber>();
+        tempPrefab.SetActive(false);
+        
+        // 直接创建对象池，使用临时预制体
+        damageNumberPool = new ObjectPool<DamageNumber>(
+            prefab: tempPrefab,
+            poolParent: poolParent,
+            initialSize: initialPoolSize,
+            maxSize: maxPoolSize,
+            allowGrowth: allowPoolGrowth,
+            createFunction: () => {
+                // 自定义创建函数
+                GameObject obj = new GameObject("DamageNumber");
+                
+                // 设置为Canvas的子对象
+                obj.transform.SetParent(canvas.transform, false);
+                
+                // 添加RectTransform
+                RectTransform rect = obj.AddComponent<RectTransform>();
+                rect.sizeDelta = new Vector2(120, 60);
+                
+                // 添加TextMeshProUGUI
+                TMPro.TextMeshProUGUI text = obj.AddComponent<TMPro.TextMeshProUGUI>();
+                text.text = "-25";
+                text.fontSize = 48;
+                text.color = Color.yellow;
+                text.alignment = TMPro.TextAlignmentOptions.Center;
+                text.fontStyle = TMPro.FontStyles.Bold;
+                
+                // 添加DamageNumber组件
+                DamageNumber damageNum = obj.AddComponent<DamageNumber>();
+                
+                obj.SetActive(false);
+                return damageNum;
+            },
+            onGet: OnGetDamageNumber,
+            onRelease: OnReleaseDamageNumber,
+            onDestroy: OnDestroyDamageNumber
+        );
+        
+        Debug.Log($"[DamageNumberPool] 强制创建对象池完成! 池大小: {initialPoolSize}, 总数: {damageNumberPool.TotalCount}");
+    }
+
     /// <summary>
     /// 创建默认的伤害数字预制体
     /// </summary>

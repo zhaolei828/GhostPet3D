@@ -21,6 +21,9 @@ public class DamageNumberManager : MonoBehaviour
     // Canvas缓存
     private Canvas uiCanvas;
     
+    // 相机引用
+    private Camera mainCamera;
+    
     private void Awake()
     {
         // 单例设置
@@ -28,11 +31,20 @@ public class DamageNumberManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            Debug.Log("[DamageNumberManager] 单例已初始化");
         }
         else
         {
+            Debug.Log("[DamageNumberManager] 发现重复实例，销毁");
             Destroy(gameObject);
             return;
+        }
+        
+        // 初始化相机引用
+        mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            mainCamera = FindFirstObjectByType<Camera>();
         }
         
         // 初始化Canvas缓存
@@ -94,26 +106,9 @@ public class DamageNumberManager : MonoBehaviour
         // 计算显示位置
         Vector3 displayPosition = CalculateDisplayPosition(position);
         
-        // 从对象池获取伤害数字
-        DamageNumber damageNumber = DamageNumberPool.Instance.GetDamageNumber(
-            damage, 
-            damageType, 
-            displayPosition, 
-            uiCanvas.transform,
-            defaultLifetime
-        );
-        
-        if (damageNumber == null)
-        {
-            Debug.LogWarning("[DamageNumberManager] 无法从对象池获取伤害数字对象");
-            return;
-        }
-        
-        // 设置为屏幕坐标（如果是UI Canvas）
-        if (uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            SetScreenPosition(damageNumber, position);
-        }
+        // 直接创建伤害数字对象（绕过对象池问题）
+        Debug.Log($"[DamageNumberManager] 直接创建伤害数字: {damage}, 类型: {damageType}");
+        CreateDamageNumberDirectly(damage, damageType, position);
         
         if (enableDebugLog)
             Debug.Log($"[DamageNumberManager] 伤害数字显示成功: {damage} ({damageType})");
@@ -226,26 +221,9 @@ public class DamageNumberManager : MonoBehaviour
         // 计算显示位置
         Vector3 displayPosition = CalculateDisplayPosition(position);
         
-        // 从对象池获取自定义伤害数字
-        DamageNumber damageNumber = DamageNumberPool.Instance.GetCustomDamageNumber(
-            text,
-            color,
-            displayPosition,
-            uiCanvas.transform,
-            defaultLifetime
-        );
-        
-        if (damageNumber == null)
-        {
-            Debug.LogWarning("[DamageNumberManager] 无法从对象池获取自定义文本对象");
-            return;
-        }
-        
-        // 设置为屏幕坐标（如果是UI Canvas）
-        if (uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            SetScreenPosition(damageNumber, position);
-        }
+        // 直接创建自定义伤害数字（绕过对象池问题）
+        Debug.Log($"[DamageNumberManager] 直接创建自定义伤害数字: {text}, 颜色: {color}");
+        CreateCustomDamageNumberDirectly(text, color, position);
         
         if (enableDebugLog)
             Debug.Log($"[DamageNumberManager] 自定义文本显示成功: {text}");
@@ -366,9 +344,10 @@ public class DamageNumberManager : MonoBehaviour
         
         // 添加TextMeshProUGUI组件
         TextMeshProUGUI textComponent = damageObj.AddComponent<TextMeshProUGUI>();
-        textComponent.text = damage.ToString("F0");
-        textComponent.fontSize = 24;
+        textComponent.text = $"-{damage:F0}";
+        textComponent.fontSize = 48;
         textComponent.alignment = TMPro.TextAlignmentOptions.Center;
+        textComponent.fontStyle = TMPro.FontStyles.Bold;
 
         // 设置颜色
         switch (damageType)
@@ -384,21 +363,18 @@ public class DamageNumberManager : MonoBehaviour
                 break;
         }
 
-        // 计算并设置位置
-        Vector3 displayPosition = CalculateDisplayPosition(position);
-        if (uiCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
-        {
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
-            {
-                Vector3 screenPos = mainCamera.WorldToScreenPoint(displayPosition);
-                rectTransform.position = screenPos;
-            }
-        }
-        else
-        {
-            rectTransform.position = displayPosition;
-        }
+        // 计算并设置位置（使用与CreateDamageNumberDirectly相同的方法）
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(position);
+        
+        // 转换屏幕坐标到UI坐标
+        Vector2 uiPosition;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            uiCanvas.transform as RectTransform,
+            screenPos,
+            uiCanvas.worldCamera,
+            out uiPosition
+        );
+        rectTransform.localPosition = uiPosition;
 
         // 简单的上移和淡出动画
         StartCoroutine(AnimateTraditionalDamageNumber(damageObj, textComponent));
@@ -437,5 +413,122 @@ public class DamageNumberManager : MonoBehaviour
         {
             Destroy(damageObj);
         }
+    }
+
+    private void CreateDamageNumberDirectly(float damage, DamageType damageType, Vector3 worldPosition)
+    {
+        // 将世界坐标转换为屏幕坐标
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+        
+        // 创建GameObject
+        GameObject damageObj = new GameObject("DamageNumber_Direct");
+        damageObj.transform.SetParent(uiCanvas.transform, false);
+        
+        // 添加RectTransform
+        RectTransform rectTransform = damageObj.AddComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(120, 60);
+        
+        // 转换屏幕坐标到UI坐标
+        Vector2 uiPosition;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            uiCanvas.transform as RectTransform,
+            screenPos,
+            uiCanvas.worldCamera,
+            out uiPosition
+        );
+        rectTransform.localPosition = uiPosition;
+        
+        // 添加TextMeshProUGUI
+        TMPro.TextMeshProUGUI text = damageObj.AddComponent<TMPro.TextMeshProUGUI>();
+        text.text = $"-{damage:F0}";
+        text.fontSize = 48;
+        text.alignment = TMPro.TextAlignmentOptions.Center;
+        text.fontStyle = TMPro.FontStyles.Bold;
+        
+        // 根据伤害类型设置颜色
+        switch (damageType)
+        {
+            case DamageType.PlayerDamage:
+                text.color = Color.red;
+                break;
+            case DamageType.EnemyDamage:
+                text.color = Color.yellow;
+                break;
+            default:
+                text.color = Color.white;
+                break;
+        }
+        
+        // 添加动画：向上移动并淡出
+        StartCoroutine(AnimateDamageNumberDirect(damageObj, rectTransform));
+        
+        Debug.Log($"[DamageNumberManager] 成功创建伤害数字: {text.text}, 颜色: {text.color}");
+    }
+
+    private System.Collections.IEnumerator AnimateDamageNumberDirect(GameObject damageObj, RectTransform rectTransform)
+    {
+        float duration = 2f;
+        float elapsed = 0f;
+        Vector3 startPos = rectTransform.localPosition;
+        Vector3 endPos = startPos + Vector3.up * 100f;
+        
+        TMPro.TextMeshProUGUI text = damageObj.GetComponent<TMPro.TextMeshProUGUI>();
+        Color startColor = text.color;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / duration;
+            
+            // 向上移动
+            rectTransform.localPosition = Vector3.Lerp(startPos, endPos, progress);
+            
+            // 淡出
+            Color currentColor = startColor;
+            currentColor.a = Mathf.Lerp(1f, 0f, progress);
+            text.color = currentColor;
+            
+            yield return null;
+        }
+        
+        // 销毁对象
+        Destroy(damageObj);
+    }
+
+    private void CreateCustomDamageNumberDirectly(string text, Color color, Vector3 worldPosition)
+    {
+        // 将世界坐标转换为屏幕坐标
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPosition);
+        
+        // 创建GameObject
+        GameObject damageObj = new GameObject("CustomDamageNumber_Direct");
+        damageObj.transform.SetParent(uiCanvas.transform, false);
+        
+        // 添加RectTransform
+        RectTransform rectTransform = damageObj.AddComponent<RectTransform>();
+        rectTransform.sizeDelta = new Vector2(120, 60);
+        
+        // 转换屏幕坐标到UI坐标
+        Vector2 uiPosition;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            uiCanvas.transform as RectTransform,
+            screenPos,
+            uiCanvas.worldCamera,
+            out uiPosition
+        );
+        rectTransform.localPosition = uiPosition;
+        
+        // 添加TextMeshProUGUI
+        TMPro.TextMeshProUGUI textComponent = damageObj.AddComponent<TMPro.TextMeshProUGUI>();
+        textComponent.text = text;
+        textComponent.fontSize = 48;
+        textComponent.alignment = TMPro.TextAlignmentOptions.Center;
+        textComponent.fontStyle = TMPro.FontStyles.Bold;
+        textComponent.color = color;
+        
+        // 添加动画：向上移动并淡出
+        StartCoroutine(AnimateDamageNumberDirect(damageObj, rectTransform));
+        
+        Debug.Log($"[DamageNumberManager] 成功创建自定义伤害数字: {text}, 颜色: {color}");
     }
 }
