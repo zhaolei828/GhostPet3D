@@ -20,7 +20,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float speed = 2f;
     [SerializeField] private float damage = 25f; // 增加伤害，让敌人能够快速死亡
     [SerializeField] private float lifeTime = 5f;
-    [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级
+    [SerializeField] private LayerMask enemyLayer = 1 << 6; // 默认设置Enemy层为第6层
     
     [Header("3D移动设置")]
     [SerializeField] private bool usePhysics = false;
@@ -33,7 +33,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float rotateAroundAxis = 0f; // 绕自身轴旋转
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLogs = false; // 调试日志开关
+    [SerializeField] private bool enableDebugLogs = true; // 调试日志开关 - 临时开启
     
     // 私有变量
     private Vector3 direction;
@@ -170,9 +170,13 @@ public class FlyingSword3D : MonoBehaviour
         // 重置物理状态为环绕模式
         if (rb != null)
         {
+            // 先重置velocity，再设置为kinematic（避免警告）
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
             rb.isKinematic = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
         }
         
         // 停止粒子效果
