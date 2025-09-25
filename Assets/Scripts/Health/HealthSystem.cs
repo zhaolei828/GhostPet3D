@@ -158,18 +158,34 @@ public class HealthSystem : MonoBehaviour
     private void ShowDamageNumber(float damage)
     {
         Debug.Log($"[HealthSystem] ShowDamageNumber called for {gameObject.name}, damage: {damage}");
+        Debug.Log($"[HealthSystem] Object position: {transform.position}");
+        Debug.Log($"[HealthSystem] Object tag: {gameObject.tag}");
+        
         if (DamageNumberManager.Instance != null)
         {
             Debug.Log($"[HealthSystem] DamageNumberManager.Instance found, calling ShowDamageNumber");
+            
             // 判断是玩家还是敌人
             DamageType damageType = gameObject.CompareTag("Player") ? 
                 DamageType.PlayerDamage : DamageType.EnemyDamage;
             
-            DamageNumberManager.Instance.ShowDamageNumber(transform.position, damage, damageType);
+            Debug.Log($"[HealthSystem] DamageType determined: {damageType}");
+            
+            try
+            {
+                DamageNumberManager.Instance.ShowDamageNumber(transform.position, damage, damageType);
+                Debug.Log($"[HealthSystem] ✅ 伤害数字显示调用成功");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[HealthSystem] ❌ 伤害数字显示调用失败: {e.Message}");
+                Debug.LogError($"[HealthSystem] 异常堆栈: {e.StackTrace}");
+            }
         }
         else
         {
-            Debug.LogWarning($"[HealthSystem] DamageNumberManager.Instance is null! Cannot show damage number for {gameObject.name}");
+            Debug.LogError("[HealthSystem] ❌ DamageNumberManager.Instance 为 null，无法显示伤害数字");
+            Debug.LogError("[HealthSystem] 请确保场景中有 DamageNumberManager 对象");
         }
     }
     
