@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// 飞剑状态枚举
+/// 飞剑生命周期状态枚举（避免与UI的SwordState冲突）
 /// </summary>
-public enum SwordState
+public enum FlyingSwordLifecycleState
 {
     Orbiting,    // 环绕状态
     Launching,   // 发射状态  
@@ -47,7 +47,7 @@ public class FlyingSword3D : MonoBehaviour
     
     // 飞剑状态
     public bool IsActive { get; private set; } = false;
-    public SwordState CurrentState { get; private set; } = SwordState.Orbiting;
+    public FlyingSwordLifecycleState CurrentState { get; private set; } = FlyingSwordLifecycleState.Orbiting;
     public Vector3 Direction => direction;
     public Transform Target => target;
     
@@ -75,10 +75,10 @@ public class FlyingSword3D : MonoBehaviour
     private void Update()
     {
         // 环绕状态下跳过更新，但保持碰撞检测
-        if (CurrentState == SwordState.Orbiting || hasHit) return;
+        if (CurrentState == FlyingSwordLifecycleState.Orbiting || hasHit) return;
         
         // 只有飞行状态下才检查IsActive
-        if (CurrentState == SwordState.Flying && !IsActive) return;
+        if (CurrentState == FlyingSwordLifecycleState.Flying && !IsActive) return;
         
         currentLifeTime += Time.deltaTime;
         
@@ -95,7 +95,7 @@ public class FlyingSword3D : MonoBehaviour
         UpdateRotation();
         
         // 检查生命周期（仅飞行状态）
-        if (CurrentState == SwordState.Flying && currentLifeTime >= lifeTime)
+        if (CurrentState == FlyingSwordLifecycleState.Flying && currentLifeTime >= lifeTime)
         {
             DestroyFlyingSword();
         }
@@ -135,7 +135,7 @@ public class FlyingSword3D : MonoBehaviour
         }
         
         // 更新状态为发射
-        CurrentState = SwordState.Launching;
+        CurrentState = FlyingSwordLifecycleState.Launching;
         
         if (enableDebugLogs)
             Debug.Log($"[FlyingSword3D] 发射飞剑，方向: {direction}, IsActive: {IsActive}, State: {CurrentState}");
@@ -164,7 +164,7 @@ public class FlyingSword3D : MonoBehaviour
         target = null;
         
         // 设置为环绕状态（碰撞检测仍然工作）
-        CurrentState = SwordState.Orbiting;
+        CurrentState = FlyingSwordLifecycleState.Orbiting;
         IsActive = true; // 保持活跃以支持碰撞检测
         
         // 重置物理状态为环绕模式
@@ -188,9 +188,9 @@ public class FlyingSword3D : MonoBehaviour
     private void UpdateMovement()
     {
         // 从发射状态转换到飞行状态
-        if (CurrentState == SwordState.Launching)
+        if (CurrentState == FlyingSwordLifecycleState.Launching)
         {
-            CurrentState = SwordState.Flying;
+            CurrentState = FlyingSwordLifecycleState.Flying;
         }
         
         if (usePhysics && rb != null)
@@ -254,10 +254,10 @@ public class FlyingSword3D : MonoBehaviour
         if (hasHit) return;
         
         // 环绕状态下不处理碰撞
-        if (CurrentState == SwordState.Orbiting) return;
+        if (CurrentState == FlyingSwordLifecycleState.Orbiting) return;
         
         // 飞行状态下需要检查IsActive
-        if (CurrentState == SwordState.Flying && !IsActive) return;
+        if (CurrentState == FlyingSwordLifecycleState.Flying && !IsActive) return;
         
         // 检查是否击中敌人
         if (((1 << other.gameObject.layer) & enemyLayer) != 0)
@@ -279,7 +279,7 @@ public class FlyingSword3D : MonoBehaviour
         
         hasHit = true;
         IsActive = false;
-        CurrentState = SwordState.Destroyed;
+        CurrentState = FlyingSwordLifecycleState.Destroyed;
         
         if (enableDebugLogs)
             Debug.Log($"[FlyingSword3D] 击中目标: {target.name}，位置: {target.transform.position}");
@@ -312,7 +312,7 @@ public class FlyingSword3D : MonoBehaviour
         
         hasHit = true;
         IsActive = false;
-        CurrentState = SwordState.Destroyed;
+        CurrentState = FlyingSwordLifecycleState.Destroyed;
         
         if (enableDebugLogs)
             Debug.Log("[FlyingSword3D] 击中障碍物");
