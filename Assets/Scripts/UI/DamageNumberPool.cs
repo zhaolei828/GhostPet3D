@@ -10,7 +10,7 @@ public class DamageNumberPool : MonoBehaviour
     [SerializeField] private int initialPoolSize = 100;
     [SerializeField] private int maxPoolSize = 300;
     [SerializeField] private bool allowPoolGrowth = true;
-    [SerializeField] private bool enableDebugLog = false;
+    [SerializeField] private bool enableDebugLog = true; // 启用调试日志
     
     [Header("生命周期设置")]
     [SerializeField] private float defaultLifetime = 2f;
