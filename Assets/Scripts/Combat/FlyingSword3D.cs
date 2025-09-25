@@ -20,7 +20,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float speed = 2f;
     [SerializeField] private float damage = 25f; // 增加伤害，让敌人能够快速死亡
     [SerializeField] private float lifeTime = 5f;
-    [SerializeField] private LayerMask enemyLayer = 1 << 6; // 默认设置Enemy层为第6层
+    [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级（临时修复）
     
     [Header("3D移动设置")]
     [SerializeField] private bool usePhysics = false;
