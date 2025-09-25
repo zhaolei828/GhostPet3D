@@ -33,7 +33,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float rotateAroundAxis = 0f; // 绕自身轴旋转
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLogs = false; // 调试日志开关
+    [SerializeField] private bool enableDebugLogs = true; // 临时启用调试飞剑碰撞
     
     // 私有变量
     private Vector3 direction;

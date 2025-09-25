@@ -37,7 +37,7 @@ public class HealthSystem : MonoBehaviour
     /// <param name="source">伤害来源</param>
     public void TakeDamage(float damage, GameObject source = null)
     {
-        Debug.Log($"[HealthSystem] TakeDamage called on '{gameObject.name}' for {damage} damage. IsAlive: {IsAlive}, isInvulnerable: {isInvulnerable}.");
+        // Debug.Log($"[HealthSystem] TakeDamage called on '{gameObject.name}' for {damage} damage. IsAlive: {IsAlive}, isInvulnerable: {isInvulnerable}.");
         if (damage <= 0 || !IsAlive || isInvulnerable) return;
         
         // 扣除血量
@@ -57,7 +57,7 @@ public class HealthSystem : MonoBehaviour
         OnDamageTaken?.Invoke(damage);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         
-        Debug.Log($"{gameObject.name} 受到 {damage} 点伤害，剩余血量: {currentHealth}");
+        // Debug.Log($"{gameObject.name} 受到 {damage} 点伤害，剩余血量: {currentHealth}");
 
         // 检查死亡
         if (currentHealth <= 0)
@@ -157,9 +157,11 @@ public class HealthSystem : MonoBehaviour
     /// </summary>
     private void ShowDamageNumber(float damage)
     {
-        Debug.Log($"[HealthSystem] ShowDamageNumber called for {gameObject.name}, damage: {damage}");
-        Debug.Log($"[HealthSystem] Object position: {transform.position}");
-        Debug.Log($"[HealthSystem] Object tag: {gameObject.tag}");
+        // 减少玩家伤害调试日志
+        if (!gameObject.CompareTag("Player"))
+        {
+            Debug.Log($"[HealthSystem] ShowDamageNumber called for {gameObject.name}, damage: {damage}");
+        }
         
         if (DamageNumberManager.Instance != null)
         {
@@ -169,12 +171,12 @@ public class HealthSystem : MonoBehaviour
             DamageType damageType = gameObject.CompareTag("Player") ? 
                 DamageType.PlayerDamage : DamageType.EnemyDamage;
             
-            Debug.Log($"[HealthSystem] DamageType determined: {damageType}");
+            // Debug.Log($"[HealthSystem] DamageType determined: {damageType}");
             
             try
             {
                 DamageNumberManager.Instance.ShowDamageNumber(transform.position, damage, damageType);
-                Debug.Log($"[HealthSystem] ✅ 伤害数字显示调用成功");
+                // Debug.Log($"[HealthSystem] ✅ 伤害数字显示调用成功");
             }
             catch (System.Exception e)
             {
