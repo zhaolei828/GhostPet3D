@@ -11,7 +11,7 @@ public class DamageNumberDebugger : MonoBehaviour
     [SerializeField] private float testDamage = 50f;
     
     [Header("按键测试")]
-    [SerializeField] private KeyCode testKey = KeyCode.T;
+    [SerializeField] private bool enableKeyTest = false; // 暂时禁用按键测试避免Input System冲突
     
     private float lastTestTime;
     
@@ -25,10 +25,14 @@ public class DamageNumberDebugger : MonoBehaviour
     
     private void Update()
     {
-        // 按键测试
-        if (Input.GetKeyDown(testKey))
+        // 按键测试（暂时禁用避免Input System冲突）
+        if (enableKeyTest)
         {
-            TestDamageNumberAtPlayer();
+            // 这里需要新的Input System代码，暂时禁用
+            // if (Input.GetKeyDown(testKey))
+            // {
+            //     TestDamageNumberAtPlayer();
+            // }
         }
         
         // 自动测试

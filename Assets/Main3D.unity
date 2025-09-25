@@ -1781,6 +1781,7 @@ GameObject:
   - component: {fileID: 1058141264}
   - component: {fileID: 1058141266}
   - component: {fileID: 1058141265}
+  - component: {fileID: 1058141267}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1972,6 +1973,22 @@ MonoBehaviour:
   maxEnergy: 100
   energyCostPerSword: 20
   energyRegenRate: 10
+--- !u!114 &1058141267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058141258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb440dfa072cd8d4fb91f9a1fb87dab7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageNumberDebugger
+  enableAutoTest: 1
+  testInterval: 3
+  testDamage: 50
+  testKey: 116
 --- !u!1 &1094655988
 GameObject:
   m_ObjectHideFlags: 0
@@ -2171,7 +2188,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: ffc00a7459bac4c7da858d8a35de1676, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 1955a2db74a383b4a83588ee066b9b08, type: 2}
   m_BuildHeightMesh: 0
 --- !u!23 &2144478581
 MeshRenderer:
