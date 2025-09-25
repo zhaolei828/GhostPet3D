@@ -16,7 +16,7 @@ public class Player3DController : MonoBehaviour
     [SerializeField] private float mapBoundary = 9f; // Ground是20x20，玩家活动范围限制在18x18内
     
     [Header("自动攻击")]
-    [SerializeField] private float autoAttackRange = 8f;
+    [SerializeField] private float autoAttackRange = 15f; // 与FlyingSwordManager3D.autoTargetRange保持一致
     [SerializeField] private float autoAttackCooldown = 1f;
     
     [Header("组件引用")]
