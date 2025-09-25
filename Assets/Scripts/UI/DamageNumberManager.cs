@@ -13,7 +13,7 @@ public class DamageNumberManager : MonoBehaviour
     [SerializeField] private float defaultLifetime = 2f;     // 默认显示时长
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLog = true; // 临时启用调试    // 是否启用调试日志
+    [SerializeField] private bool enableDebugLog = false; // 是否启用调试日志
     
     // 单例模式
     public static DamageNumberManager Instance { get; private set; }
