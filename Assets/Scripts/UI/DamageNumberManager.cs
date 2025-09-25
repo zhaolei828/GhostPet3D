@@ -13,7 +13,7 @@ public class DamageNumberManager : MonoBehaviour
     [SerializeField] private float defaultLifetime = 2f;     // 默认显示时长
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLog = false;    // 是否启用调试日志
+    [SerializeField] private bool enableDebugLog = true; // 临时启用调试    // 是否启用调试日志
     
     // 单例模式
     public static DamageNumberManager Instance { get; private set; }
@@ -345,7 +345,7 @@ public class DamageNumberManager : MonoBehaviour
         // 添加TextMeshProUGUI组件
         TextMeshProUGUI textComponent = damageObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = $"-{damage:F0}";
-        textComponent.fontSize = 48;
+        textComponent.fontSize = 64; // 增大字体，更容易看到
         textComponent.alignment = TMPro.TextAlignmentOptions.Center;
         textComponent.fontStyle = TMPro.FontStyles.Bold;
 
@@ -356,7 +356,7 @@ public class DamageNumberManager : MonoBehaviour
                 textComponent.color = Color.red;
                 break;
             case DamageType.EnemyDamage:
-                textComponent.color = Color.yellow;
+                textComponent.color = new Color(1f, 0.5f, 0f, 1f); // 橙色，更明显
                 break;
             case DamageType.Healing:
                 textComponent.color = Color.green;
@@ -441,7 +441,7 @@ public class DamageNumberManager : MonoBehaviour
         // 添加TextMeshProUGUI
         TMPro.TextMeshProUGUI text = damageObj.AddComponent<TMPro.TextMeshProUGUI>();
         text.text = $"-{damage:F0}";
-        text.fontSize = 48;
+        text.fontSize = 64; // 增大字体，更容易看到
         text.alignment = TMPro.TextAlignmentOptions.Center;
         text.fontStyle = TMPro.FontStyles.Bold;
         
@@ -452,7 +452,7 @@ public class DamageNumberManager : MonoBehaviour
                 text.color = Color.red;
                 break;
             case DamageType.EnemyDamage:
-                text.color = Color.yellow;
+                text.color = new Color(1f, 0.5f, 0f, 1f); // 橙色，更明显
                 break;
             default:
                 text.color = Color.white;
@@ -521,7 +521,7 @@ public class DamageNumberManager : MonoBehaviour
         // 添加TextMeshProUGUI
         TMPro.TextMeshProUGUI textComponent = damageObj.AddComponent<TMPro.TextMeshProUGUI>();
         textComponent.text = text;
-        textComponent.fontSize = 48;
+        textComponent.fontSize = 64; // 增大字体，更容易看到
         textComponent.alignment = TMPro.TextAlignmentOptions.Center;
         textComponent.fontStyle = TMPro.FontStyles.Bold;
         textComponent.color = color;
