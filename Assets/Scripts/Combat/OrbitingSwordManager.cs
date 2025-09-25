@@ -232,8 +232,8 @@ public class OrbitingSwordManager : MonoBehaviour
         
         Debug.Log($"[OrbitingSwordManager] 发射环绕飞剑 {index + 1}");
         
-        // 3秒后重新生成飞剑
-        StartCoroutine(RegenerateSword(index, 3f));
+        // 5秒后重新生成飞剑（匹配FlyingSword3D的lifeTime）
+        StartCoroutine(RegenerateSword(index, 5f));
     }
     
     /// <summary>

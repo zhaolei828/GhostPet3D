@@ -1,6 +1,17 @@
 using UnityEngine;
 
 /// <summary>
+/// 飞剑状态枚举
+/// </summary>
+public enum SwordState
+{
+    Orbiting,    // 环绕状态
+    Launching,   // 发射状态  
+    Flying,      // 飞行状态
+    Destroyed    // 销毁状态
+}
+
+/// <summary>
 /// 3D飞剑控制器 - 基于原FlyingSword适配
 /// </summary>
 public class FlyingSword3D : MonoBehaviour
@@ -21,6 +32,9 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private GameObject hitEffect;
     [SerializeField] private float rotateAroundAxis = 0f; // 绕自身轴旋转
     
+    [Header("调试设置")]
+    [SerializeField] private bool enableDebugLogs = false; // 调试日志开关
+    
     // 私有变量
     private Vector3 direction;
     private Transform target;
@@ -33,6 +47,7 @@ public class FlyingSword3D : MonoBehaviour
     
     // 飞剑状态
     public bool IsActive { get; private set; } = false;
+    public SwordState CurrentState { get; private set; } = SwordState.Orbiting;
     public Vector3 Direction => direction;
     public Transform Target => target;
     
@@ -53,19 +68,24 @@ public class FlyingSword3D : MonoBehaviour
     private void Start()
     {
         // 什么都不做，生命周期在Launch方法中处理
-        Debug.Log($"[FlyingSword3D] Start方法执行，IsActive: {IsActive}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] Start方法执行，IsActive: {IsActive}, State: {CurrentState}");
     }
     
     private void Update()
     {
-        if (!IsActive || hasHit) return;
+        // 环绕状态下跳过更新，但保持碰撞检测
+        if (CurrentState == SwordState.Orbiting || hasHit) return;
+        
+        // 只有飞行状态下才检查IsActive
+        if (CurrentState == SwordState.Flying && !IsActive) return;
         
         currentLifeTime += Time.deltaTime;
         
-        // 每0.5秒打印一次位置信息用于调试
-        if (Time.time % 0.5f < 0.1f)
+        // 每0.5秒打印一次位置信息用于调试（仅在启用调试时）
+        if (enableDebugLogs && Time.time % 0.5f < 0.1f)
         {
-            Debug.Log($"[FlyingSword3D] 飞剑移动中: 位置{transform.position}, 方向{direction}, IsActive:{IsActive}");
+            Debug.Log($"[FlyingSword3D] 飞剑移动中: 位置{transform.position}, 方向{direction}, IsActive:{IsActive}, State:{CurrentState}");
         }
         
         // 更新移动
@@ -74,8 +94,8 @@ public class FlyingSword3D : MonoBehaviour
         // 更新旋转
         UpdateRotation();
         
-        // 检查生命周期
-        if (currentLifeTime >= lifeTime)
+        // 检查生命周期（仅飞行状态）
+        if (CurrentState == SwordState.Flying && currentLifeTime >= lifeTime)
         {
             DestroyFlyingSword();
         }
@@ -114,7 +134,11 @@ public class FlyingSword3D : MonoBehaviour
             trailEffect.Play();
         }
         
-        Debug.Log($"[FlyingSword3D] 发射飞剑，方向: {direction}, IsActive: {IsActive}, enabled: {enabled}");
+        // 更新状态为发射
+        CurrentState = SwordState.Launching;
+        
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] 发射飞剑，方向: {direction}, IsActive: {IsActive}, State: {CurrentState}");
     }
     
     /// <summary>
@@ -128,26 +152,27 @@ public class FlyingSword3D : MonoBehaviour
     }
     
     /// <summary>
-    /// 重置飞剑状态（用于对象池回收）
+    /// 重置飞剑状态（用于环绕模式）
     /// </summary>
     public void ResetSword()
     {
-        IsActive = false;
+        // 重置为环绕状态，但不设置IsActive = false
+        // 这样可以保持碰撞检测能力
         hasHit = false;
         currentLifeTime = 0f;
         direction = Vector3.zero;
         target = null;
         
-        // 重置位置和旋转
+        // 设置为环绕状态（碰撞检测仍然工作）
+        CurrentState = SwordState.Orbiting;
+        IsActive = true; // 保持活跃以支持碰撞检测
+        
+        // 重置物理状态为环绕模式
         if (rb != null)
         {
             rb.isKinematic = true;
-            // kinematic body不需要设置velocity，Unity会自动处理
-            if (!rb.isKinematic)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
         }
         
         // 停止粒子效果
@@ -156,21 +181,30 @@ public class FlyingSword3D : MonoBehaviour
             trailEffect.Stop();
         }
         
-        Debug.Log("[FlyingSword3D] 飞剑状态已重置");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] 飞剑状态已重置为环绕模式，State: {CurrentState}");
     }
     
     private void UpdateMovement()
     {
+        // 从发射状态转换到飞行状态
+        if (CurrentState == SwordState.Launching)
+        {
+            CurrentState = SwordState.Flying;
+        }
+        
         if (usePhysics && rb != null)
         {
             // 使用物理移动（已在Launch中设置velocity）
-            Debug.Log($"[FlyingSword3D] 使用物理移动, velocity: {rb.linearVelocity}");
+            if (enableDebugLogs)
+                Debug.Log($"[FlyingSword3D] 使用物理移动, velocity: {rb.linearVelocity}");
             return;
         }
         
         // 手动移动
         float currentSpeed = speed * speedCurve.Evaluate(currentLifeTime / lifeTime);
-        Debug.Log($"[FlyingSword3D] 手动移动 - direction: {direction}, speed: {speed}, currentSpeed: {currentSpeed}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] 手动移动 - direction: {direction}, speed: {speed}, currentSpeed: {currentSpeed}");
         
         if (target != null && Vector3.Distance(transform.position, target.position) > 0.5f)
         {
@@ -188,7 +222,8 @@ public class FlyingSword3D : MonoBehaviour
         Vector3 movement = direction * currentSpeed * Time.deltaTime;
         Vector3 oldPosition = transform.position;
         transform.position += movement;
-        Debug.Log($"[FlyingSword3D] 位置移动: {oldPosition} -> {transform.position}, movement: {movement}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] 位置移动: {oldPosition} -> {transform.position}, movement: {movement}");
     }
     
     private void UpdateRotation()
@@ -202,24 +237,33 @@ public class FlyingSword3D : MonoBehaviour
     
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"[FlyingSword3D] OnTriggerEnter检测到碰撞: {other.name}, layer: {other.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] OnTriggerEnter检测到碰撞: {other.name}, layer: {other.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}, State: {CurrentState}");
         HandleCollision(other);
     }
     
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log($"[FlyingSword3D] OnCollisionEnter检测到碰撞: {collision.gameObject.name}, layer: {collision.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] OnCollisionEnter检测到碰撞: {collision.gameObject.name}, layer: {collision.gameObject.layer}, hasHit: {hasHit}, IsActive: {IsActive}, State: {CurrentState}");
         HandleCollision(collision.collider);
     }
     
     private void HandleCollision(Collider other)
     {
-        if (hasHit || !IsActive) return;
+        if (hasHit) return;
+        
+        // 环绕状态下不处理碰撞
+        if (CurrentState == SwordState.Orbiting) return;
+        
+        // 飞行状态下需要检查IsActive
+        if (CurrentState == SwordState.Flying && !IsActive) return;
         
         // 检查是否击中敌人
         if (((1 << other.gameObject.layer) & enemyLayer) != 0)
         {
-            Debug.Log($"[FlyingSword3D] 成功击中敌人: {other.name}!");
+            if (enableDebugLogs)
+                Debug.Log($"[FlyingSword3D] 成功击中敌人: {other.name}!");
             HitTarget(other.gameObject);
         }
         // 检查是否击中障碍物（安全检查标签是否存在）
@@ -235,19 +279,23 @@ public class FlyingSword3D : MonoBehaviour
         
         hasHit = true;
         IsActive = false;
+        CurrentState = SwordState.Destroyed;
         
-        Debug.Log($"[FlyingSword3D] 击中目标: {target.name}，位置: {target.transform.position}");
+        if (enableDebugLogs)
+            Debug.Log($"[FlyingSword3D] 击中目标: {target.name}，位置: {target.transform.position}");
         
         // 对目标造成伤害
         var enemyHealth = target.GetComponent<HealthSystem>();
         if (enemyHealth != null)
         {
-            Debug.Log($"[FlyingSword3D] 对 {target.name} 造成 {damage} 点伤害");
+            if (enableDebugLogs)
+                Debug.Log($"[FlyingSword3D] 对 {target.name} 造成 {damage} 点伤害");
             enemyHealth.TakeDamage(damage);
         }
         else
         {
-            Debug.LogWarning($"[FlyingSword3D] {target.name} 没有HealthSystem组件");
+            if (enableDebugLogs)
+                Debug.LogWarning($"[FlyingSword3D] {target.name} 没有HealthSystem组件");
         }
         
         
@@ -264,8 +312,10 @@ public class FlyingSword3D : MonoBehaviour
         
         hasHit = true;
         IsActive = false;
+        CurrentState = SwordState.Destroyed;
         
-        Debug.Log("[FlyingSword3D] 击中障碍物");
+        if (enableDebugLogs)
+            Debug.Log("[FlyingSword3D] 击中障碍物");
         
         // 创建击中特效
         CreateHitEffect();
