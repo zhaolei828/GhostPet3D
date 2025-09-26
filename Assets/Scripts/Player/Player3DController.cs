@@ -149,7 +149,7 @@ public class Player3DController : MonoBehaviour
         // 每2秒打印一次状态信息
         if (Time.time % 2f < 0.1f)
         {
-            Debug.Log($"[Player3DController] Update运行中, IsAlive: {IsAlive}, 血量: {healthSystem?.CurrentHealth}/{healthSystem?.MaxHealth}");
+            // Debug.Log($"[Player3DController] Update运行中, IsAlive: {IsAlive}, 血量: {healthSystem?.CurrentHealth}/{healthSystem?.MaxHealth}"); // 屏蔽干扰日志
         }
     }
     

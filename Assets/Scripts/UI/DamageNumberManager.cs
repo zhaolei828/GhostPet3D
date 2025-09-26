@@ -96,19 +96,8 @@ public class DamageNumberManager : MonoBehaviour
             return;
         }
         
-        // 验证Canvas
-        if (!ValidateCanvas())
-        {
-            Debug.LogWarning("[DamageNumberManager] Canvas不可用，无法显示伤害数字");
-            return;
-        }
-        
-        // 计算显示位置
-        Vector3 displayPosition = CalculateDisplayPosition(position);
-        
-        // 直接创建伤害数字对象（绕过对象池问题）
-        Debug.Log($"[DamageNumberManager] 直接创建伤害数字: {damage}, 类型: {damageType}");
-        CreateDamageNumberDirectly(damage, damageType, position);
+        // 创建世界空间3D文本
+        CreateWorldSpaceDamageText(position, damage, damageType);
         
         if (enableDebugLog)
             Debug.Log($"[DamageNumberManager] 伤害数字显示成功: {damage} ({damageType})");
@@ -241,6 +230,84 @@ public class DamageNumberManager : MonoBehaviour
         return "DamageNumberPool: 未初始化";
     }
     
+    /// <summary>
+    /// 创建世界空间伤害文本（不依赖Canvas）
+    /// </summary>
+    private void CreateWorldSpaceDamageText(Vector3 position, float damage, DamageType damageType)
+    {
+        // 创建3D文本对象
+        GameObject textObj = new GameObject("WorldDamageText");
+        // 贴着头皮显示 - 根据对象类型调整高度
+        float headHeight = 1.5f; // Player和Enemy头部大致高度
+        Vector3 offset = Vector3.up * headHeight; // 贴着头皮
+        textObj.transform.position = position + offset;
+        
+        // 添加TextMesh组件（3D文本，不需要Canvas）
+        TextMesh textMesh = textObj.AddComponent<TextMesh>();
+        textMesh.text = $"-{damage:F0}";
+        textMesh.fontSize = 200; // 大幅增加字体大小，确保清晰可见
+        textMesh.anchor = TextAnchor.MiddleCenter;
+        
+        // 设置文字缩放，确保在不同距离下都清晰可见
+        textObj.transform.localScale = Vector3.one * 1.0f; // 1.0倍缩放，最大尺寸
+        
+        // 设置颜色
+        switch (damageType)
+        {
+            case DamageType.PlayerDamage:
+                textMesh.color = Color.red;
+                break;
+            case DamageType.EnemyDamage:
+                textMesh.color = new Color(1f, 0.5f, 0f); // 橙色
+                break;
+            case DamageType.Healing:
+                textMesh.color = Color.green;
+                break;
+        }
+        
+        // 让文本面向摄像机
+        if (Camera.main != null)
+        {
+            textObj.transform.LookAt(Camera.main.transform);
+            textObj.transform.Rotate(0, 180, 0); // 翻转让文字正向显示
+        }
+        
+        // 简单动画：上升后消失
+        StartCoroutine(AnimateWorldSpaceText(textObj));
+        
+        // 伤害文本创建完成
+    }
+    
+    /// <summary>
+    /// 世界空间文本动画
+    /// </summary>
+    private System.Collections.IEnumerator AnimateWorldSpaceText(GameObject textObj)
+    {
+        float duration = 2f;
+        Vector3 startPos = textObj.transform.position;
+        Vector3 endPos = startPos + Vector3.up * 2f;
+        TextMesh textMesh = textObj.GetComponent<TextMesh>();
+        Color startColor = textMesh.color;
+        
+        for (float t = 0; t < duration; t += Time.deltaTime)
+        {
+            float progress = t / duration;
+            
+            // 上升运动
+            textObj.transform.position = Vector3.Lerp(startPos, endPos, progress);
+            
+            // 淡出效果
+            Color color = startColor;
+            color.a = Mathf.Lerp(1f, 0f, progress);
+            textMesh.color = color;
+            
+            yield return null;
+        }
+        
+        // 销毁对象
+        Destroy(textObj);
+    }
+
     /// <summary>
     /// 预加载伤害数字对象
     /// </summary>

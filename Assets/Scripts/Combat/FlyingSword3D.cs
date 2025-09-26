@@ -33,7 +33,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float rotateAroundAxis = 0f; // 绕自身轴旋转
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLogs = true; // 临时启用调试飞剑碰撞
+    [SerializeField] private bool enableDebugLogs = false; // 临时启用专门调试FlyingSword3D
     
     // 私有变量
     private Vector3 direction;
@@ -93,6 +93,12 @@ public class FlyingSword3D : MonoBehaviour
         
         // 更新旋转
         UpdateRotation();
+        
+        // 强制距离检测：绕过物理碰撞检测的问题
+        if (CurrentState == FlyingSwordLifecycleState.Flying)
+        {
+            CheckDistanceCollision();
+        }
         
         // 检查生命周期（仅飞行状态）
         if (CurrentState == FlyingSwordLifecycleState.Flying && currentLifeTime >= lifeTime)
@@ -445,5 +451,39 @@ public class FlyingSword3D : MonoBehaviour
         // 绘制起始位置
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(startPosition, 0.2f);
+    }
+    
+    /// <summary>
+    /// 强制距离检测敌人（绕过物理碰撞问题）
+    /// </summary>
+    private void CheckDistanceCollision()
+    {
+        // 查找所有敌人
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            if (enemy.activeInHierarchy)
+            {
+                float distance = Vector3.Distance(transform.position, enemy.transform.position);
+                if (distance <= 2f) // 2米内算击中
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"[FlyingSword3D] 距离击中敌人: {enemy.name}, 距离: {distance:F2}米");
+                    
+                    // 直接触发敌人受伤
+                    HealthSystem enemyHealth = enemy.GetComponent<HealthSystem>();
+                    if (enemyHealth != null)
+                    {
+                        enemyHealth.TakeDamage(damage);
+                        if (enableDebugLogs)
+                            Debug.Log($"[FlyingSword3D] 敌人受伤: {enemy.name}, 伤害: {damage}");
+                    }
+                    
+                    // 击中后销毁飞剑
+                    HitTarget(enemy);
+                    return;
+                }
+            }
+        }
     }
 }
