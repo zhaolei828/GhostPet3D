@@ -38,6 +38,7 @@ public class HealthSystem : MonoBehaviour
     /// <param name="source">伤害来源</param>
     public void TakeDamage(float damage, GameObject source = null)
     {
+        // Debug.Log($"[HealthSystem] TakeDamage called: damage={damage}, source={source?.name ?? "null"}");
         if (damage <= 0 || !IsAlive || isInvulnerable) return;
         
         // 扣除血量
@@ -156,11 +157,7 @@ public class HealthSystem : MonoBehaviour
     /// </summary>
     private void ShowDamageNumber(float damage)
     {
-        // 减少玩家伤害调试日志
-        if (!gameObject.CompareTag("Player"))
-        {
-            Debug.Log($"[HealthSystem] ShowDamageNumber called for {gameObject.name}, damage: {damage}");
-        }
+        // Debug.Log($"[HealthSystem] ShowDamageNumber called for {gameObject.name}, damage: {damage}");
         
         if (DamageNumberManager.Instance != null)
         {

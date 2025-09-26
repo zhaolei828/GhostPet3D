@@ -96,8 +96,7 @@ public class DamageNumberManager : MonoBehaviour
     /// </summary>
     public void ShowDamageNumber(Vector3 position, float damage, DamageType damageType = DamageType.EnemyDamage)
     {
-        if (enableDebugLog)
-            Debug.Log($"[DamageNumberManager] ShowDamageNumber: position={position}, damage={damage}, type={damageType}");
+        // Debug.Log($"[DamageNumberManager] ShowDamageNumber: position={position}, damage={damage}, type={damageType}");
         
         // 使用Canvas UI方案显示伤害数字（支持丰富样式）
         ShowDamageNumberTraditional(position, damage, damageType);
@@ -415,6 +414,7 @@ public class DamageNumberManager : MonoBehaviour
         // 添加TextMeshProUGUI组件
         TextMeshProUGUI textComponent = damageObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = $"-{damage:F0}";
+        // Debug.Log($"[DamageNumberManager] 设置文本内容: {textComponent.text}, 原始damage值: {damage}");
         textComponent.fontSize = canvasFontSize;
         textComponent.alignment = TMPro.TextAlignmentOptions.Center;
         textComponent.fontStyle = fontStyle;

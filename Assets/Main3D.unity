@@ -697,6 +697,13 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1, z: 0}
   randomRange: 0.5
   defaultLifetime: 2
+  canvasFontSize: 64
+  canvasTextSize: {x: 100, y: 50}
+  canvasUpSpeed: 100
+  fontStyle: 1
+  playerDamageColor: {r: 1, g: 0, b: 0, a: 1}
+  enemyDamageColor: {r: 1, g: 0.5, b: 0, a: 1}
+  healingColor: {r: 0, g: 1, b: 0, a: 1}
   enableDebugLog: 1
 --- !u!4 &856933222
 Transform:
