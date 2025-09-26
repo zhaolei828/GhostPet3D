@@ -12,6 +12,17 @@ public class DamageNumberManager : MonoBehaviour
     [SerializeField] private float randomRange = 0.5f;       // 随机位置范围
     [SerializeField] private float defaultLifetime = 2f;     // 默认显示时长
     
+    [Header("Canvas样式设置")]
+    [SerializeField] private float canvasFontSize = 64f;        // Canvas字体大小
+    [SerializeField] private Vector2 canvasTextSize = new Vector2(100, 50); // Canvas文本框大小
+    [SerializeField] private float canvasUpSpeed = 100f;        // Canvas上升速度
+    [SerializeField] private TMPro.FontStyles fontStyle = TMPro.FontStyles.Bold; // 字体样式
+    
+    [Header("颜色配置")]
+    [SerializeField] private Color playerDamageColor = Color.red;               // 玩家伤害颜色
+    [SerializeField] private Color enemyDamageColor = new Color(1f, 0.5f, 0f, 1f); // 敌人伤害颜色
+    [SerializeField] private Color healingColor = Color.green;                  // 治疗颜色
+    
     [Header("调试设置")]
     [SerializeField] private bool enableDebugLog = false; // 是否启用调试日志
     
@@ -88,16 +99,8 @@ public class DamageNumberManager : MonoBehaviour
         if (enableDebugLog)
             Debug.Log($"[DamageNumberManager] ShowDamageNumber: position={position}, damage={damage}, type={damageType}");
         
-        // 检查对象池是否可用，如果不可用则使用传统方法
-        if (DamageNumberPool.Instance == null)
-        {
-            // 静默切换到传统方法，不显示警告
-            ShowDamageNumberTraditional(position, damage, damageType);
-            return;
-        }
-        
-        // 创建世界空间3D文本
-        CreateWorldSpaceDamageText(position, damage, damageType);
+        // 使用Canvas UI方案显示伤害数字（支持丰富样式）
+        ShowDamageNumberTraditional(position, damage, damageType);
         
         if (enableDebugLog)
             Debug.Log($"[DamageNumberManager] 伤害数字显示成功: {damage} ({damageType})");
@@ -238,14 +241,14 @@ public class DamageNumberManager : MonoBehaviour
         // 创建3D文本对象
         GameObject textObj = new GameObject("WorldDamageText");
         // 贴着头皮显示 - 根据对象类型调整高度
-        float headHeight = 1.5f; // Player和Enemy头部大致高度
+        float headHeight = 0.5f; // Player和Enemy头部大致高度
         Vector3 offset = Vector3.up * headHeight; // 贴着头皮
         textObj.transform.position = position + offset;
         
         // 添加TextMesh组件（3D文本，不需要Canvas）
         TextMesh textMesh = textObj.AddComponent<TextMesh>();
         textMesh.text = $"-{damage:F0}";
-        textMesh.fontSize = 200; // 大幅增加字体大小，确保清晰可见
+        textMesh.fontSize = 10; // 大幅增加字体大小，确保清晰可见
         textMesh.anchor = TextAnchor.MiddleCenter;
         
         // 设置文字缩放，确保在不同距离下都清晰可见
@@ -283,9 +286,9 @@ public class DamageNumberManager : MonoBehaviour
     /// </summary>
     private System.Collections.IEnumerator AnimateWorldSpaceText(GameObject textObj)
     {
-        float duration = 2f;
+        float duration = 1f;
         Vector3 startPos = textObj.transform.position;
-        Vector3 endPos = startPos + Vector3.up * 2f;
+        Vector3 endPos = startPos + Vector3.up * 1f;
         TextMesh textMesh = textObj.GetComponent<TextMesh>();
         Color startColor = textMesh.color;
         
@@ -407,26 +410,26 @@ public class DamageNumberManager : MonoBehaviour
 
         // 添加RectTransform
         RectTransform rectTransform = damageObj.AddComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(100, 50);
+        rectTransform.sizeDelta = canvasTextSize;
         
         // 添加TextMeshProUGUI组件
         TextMeshProUGUI textComponent = damageObj.AddComponent<TextMeshProUGUI>();
         textComponent.text = $"-{damage:F0}";
-        textComponent.fontSize = 64; // 增大字体，更容易看到
+        textComponent.fontSize = canvasFontSize;
         textComponent.alignment = TMPro.TextAlignmentOptions.Center;
-        textComponent.fontStyle = TMPro.FontStyles.Bold;
+        textComponent.fontStyle = fontStyle;
 
-        // 设置颜色
+        // 设置颜色（使用配置字段）
         switch (damageType)
         {
             case DamageType.PlayerDamage:
-                textComponent.color = Color.red;
+                textComponent.color = playerDamageColor;
                 break;
             case DamageType.EnemyDamage:
-                textComponent.color = new Color(1f, 0.5f, 0f, 1f); // 橙色，更明显
+                textComponent.color = enemyDamageColor;
                 break;
             case DamageType.Healing:
-                textComponent.color = Color.green;
+                textComponent.color = healingColor;
                 break;
         }
 
@@ -464,8 +467,8 @@ public class DamageNumberManager : MonoBehaviour
             timer += Time.deltaTime;
             float progress = timer / defaultLifetime;
 
-            // 上移
-            damageObj.transform.position = startPos + Vector3.up * (progress * 100f);
+            // 上移（使用配置的上升速度）
+            damageObj.transform.position = startPos + Vector3.up * (progress * canvasUpSpeed);
 
             // 淡出
             Color currentColor = startColor;
