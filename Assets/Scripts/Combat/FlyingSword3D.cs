@@ -19,12 +19,6 @@ public class FlyingSword3D : MonoBehaviour
     [Header("飞剑设置")]
     [SerializeField] private float speed = 2f;
     [SerializeField] private float damage = 25f; // 玩家飞剑伤害
-    
-    void Awake()
-    {
-        // 强制设置伤害值，覆盖预制件中的序列化值
-        damage = 25f;
-    }
     [SerializeField] private float lifeTime = 5f;
     [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级（临时修复）
     
@@ -59,6 +53,9 @@ public class FlyingSword3D : MonoBehaviour
     
     private void Awake()
     {
+        // 强制设置伤害值，覆盖预制件中的序列化值
+        damage = 25f;
+        
         rb = GetComponent<Rigidbody>();
         meshRenderer = GetComponent<MeshRenderer>();
         swordCollider = GetComponent<Collider>();
