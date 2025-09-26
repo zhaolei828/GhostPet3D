@@ -13,7 +13,7 @@ public class Enemy3DAI : MonoBehaviour
     
     [Header("攻击设置")]
     [SerializeField] private float attackRange = 2f;
-    [SerializeField] private float attackDamage = 1f;
+    [SerializeField] private float attackDamage = 8f; // 敌人攻击伤害
     [SerializeField] private float attackCooldown = 1f;
     
     [Header("检测设置")]

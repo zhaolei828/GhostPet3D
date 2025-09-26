@@ -156,7 +156,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FlyingSword3D
   speed: 10
-  damage: 1
+  damage: 25
   lifeTime: 5
   enemyLayer:
     serializedVersion: 2
