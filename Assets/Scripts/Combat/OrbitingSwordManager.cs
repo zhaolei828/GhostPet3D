@@ -16,6 +16,7 @@ public class OrbitingSwordManager : MonoBehaviour
     [Header("飞剑外观")]
     [SerializeField] private float swordScale = 0.3f;
     [SerializeField] private Material orbitSwordMaterial;
+    [SerializeField] private Material blueGlowingSwordMaterial;
     
     // 环绕飞剑列表
     private List<Transform> orbitingSwords = new List<Transform>();
@@ -40,6 +41,20 @@ public class OrbitingSwordManager : MonoBehaviour
             Debug.Log("[OrbitingSwordManager] 单例已存在，销毁重复对象");
             Destroy(gameObject);
             return;
+        }
+        
+        // 自动加载蓝光材质
+        if (blueGlowingSwordMaterial == null)
+        {
+            blueGlowingSwordMaterial = Resources.Load<Material>("Materials/BlueGlowingSwordMaterial");
+            if (blueGlowingSwordMaterial == null)
+            {
+                // 如果Resources加载失败，尝试使用AssetDatabase（编辑器模式）
+                #if UNITY_EDITOR
+                blueGlowingSwordMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/BlueGlowingSwordMaterial.mat");
+                #endif
+            }
+            Debug.Log($"[OrbitingSwordManager] 自动加载蓝光材质: {(blueGlowingSwordMaterial != null ? "成功" : "失败")}");
         }
         
         // 查找Player对象
@@ -102,13 +117,15 @@ public class OrbitingSwordManager : MonoBehaviour
             GameObject sword = Instantiate(orbitingSwordPrefab, position, Quaternion.identity);
             sword.name = $"OrbitingSword_{i + 1}";
             
-            // 设置材质
-            if (orbitSwordMaterial != null)
+            // 设置材质 - 优先使用蓝光材质
+            Material materialToApply = blueGlowingSwordMaterial != null ? blueGlowingSwordMaterial : orbitSwordMaterial;
+            if (materialToApply != null)
             {
                 MeshRenderer renderer = sword.GetComponent<MeshRenderer>();
                 if (renderer != null)
                 {
-                    renderer.material = orbitSwordMaterial;
+                    renderer.material = materialToApply;
+                    Debug.Log($"[OrbitingSwordManager] 为飞剑 {sword.name} 应用了蓝光材质");
                 }
             }
             
@@ -274,13 +291,15 @@ public class OrbitingSwordManager : MonoBehaviour
             GameObject newSword = Instantiate(orbitingSwordPrefab, position, Quaternion.identity);
             newSword.name = $"OrbitingSword_{index + 1}";
             
-            // 应用设置（与CreateOrbitingSwords中相同）
-            if (orbitSwordMaterial != null)
+            // 应用设置（与CreateOrbitingSwords中相同） - 优先使用蓝光材质
+            Material materialToApply = blueGlowingSwordMaterial != null ? blueGlowingSwordMaterial : orbitSwordMaterial;
+            if (materialToApply != null)
             {
                 MeshRenderer renderer = newSword.GetComponent<MeshRenderer>();
                 if (renderer != null)
                 {
-                    renderer.material = orbitSwordMaterial;
+                    renderer.material = materialToApply;
+                    Debug.Log($"[OrbitingSwordManager] 为重生飞剑 {newSword.name} 应用了蓝光材质");
                 }
             }
             
