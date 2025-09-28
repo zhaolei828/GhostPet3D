@@ -4,6 +4,23 @@ using System.Text;
 using System.Collections;
 
 /// <summary>
+/// 可监控池接口 - 为对象池提供统一的监控和管理能力
+/// </summary>
+public interface IPoolMonitorable
+{
+    string PoolName { get; }
+    int TotalCount { get; }
+    int ActiveCount { get; }
+    int AvailableCount { get; }
+    float EstimatedMemoryUsage { get; } // MB
+    bool CanOptimize { get; }
+    void OptimizePool(int newSize);
+    void PreloadPool(int count);
+    void ClearPool();
+    string GetDetailedStats();
+}
+
+/// <summary>
 /// 对象池管理器 - 统一监控和优化所有对象池的性能
 /// </summary>
 public class PoolManager : MonoBehaviour
@@ -73,22 +90,6 @@ public class PoolManager : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// 可监控池接口
-    /// </summary>
-    public interface IPoolMonitorable
-    {
-        string PoolName { get; }
-        int TotalCount { get; }
-        int ActiveCount { get; }
-        int AvailableCount { get; }
-        float EstimatedMemoryUsage { get; } // MB
-        bool CanOptimize { get; }
-        void OptimizePool(int newSize);
-        void PreloadPool(int count);
-        void ClearPool();
-        string GetDetailedStats();
-    }
     
     private void Awake()
     {
@@ -157,17 +158,16 @@ public class PoolManager : MonoBehaviour
             RegisterPool(new DamageNumberPoolAdapter(DamageNumberPool.Instance));
         }
         
-        // 注册敌人池 - 临时禁用，等3D版本实现
-        // if (EnemyPool.Instance != null)
-        // {
-        //     RegisterPool(new EnemyPoolAdapter(EnemyPool.Instance));
-        // }
+        // 注册敌人生成器池
+        EnemySpawner enemySpawner = FindFirstObjectByType<EnemySpawner>();
+        if (enemySpawner != null)
+        {
+            RegisterPool(new EnemySpawnerAdapter(enemySpawner));
+            Debug.Log("[PoolManager] 注册了EnemySpawner对象池适配器");
+        }
         
-        // 注册残影池 - 临时禁用，等3D版本实现
-        // if (SwordAfterimagePool.Instance != null)
-        // {
-        //     RegisterPool(new SwordAfterimagePoolAdapter(SwordAfterimagePool.Instance));
-        // }
+        // 注册残影池 - 暂时跳过，等待残影效果系统实现
+        // SwordAfterimagePool功能尚未实现，暂时不注册
         
         Debug.Log($"[PoolManager] 发现并注册了 {monitorablePools.Count} 个对象池");
     }
@@ -471,7 +471,7 @@ public class PoolManager : MonoBehaviour
 }
 
 // 适配器类，用于将现有的对象池适配到监控接口
-public class DamageNumberPoolAdapter : PoolManager.IPoolMonitorable
+public class DamageNumberPoolAdapter : IPoolMonitorable
 {
     private DamageNumberPool pool;
     
@@ -509,6 +509,55 @@ public class DamageNumberPoolAdapter : PoolManager.IPoolMonitorable
     }
 }
 
-// EnemyPoolAdapter 临时移除 - 等待EnemyPool类实现
+/// <summary>
+/// 敌人生成器对象池适配器 - 将EnemySpawner适配到PoolManager系统
+/// </summary>
+public class EnemySpawnerAdapter : IPoolMonitorable
+{
+    private EnemySpawner enemySpawner;
+    
+    public EnemySpawnerAdapter(EnemySpawner spawner)
+    {
+        enemySpawner = spawner;
+    }
+    
+    public string PoolName => "EnemyPool";
+    public int TotalCount => enemySpawner.ActiveEnemyCount + enemySpawner.PoolSize;
+    public int ActiveCount => enemySpawner.ActiveEnemyCount;
+    public int AvailableCount => enemySpawner.PoolSize;
+    public float EstimatedMemoryUsage => (TotalCount * 0.5f); // 估算每个敌人0.5MB
+    public bool CanOptimize => AvailableCount > ActiveCount * 2; // 可用数量超过活跃数量2倍时可优化
+    
+    public void OptimizePool(int newSize)
+    {
+        // EnemySpawner没有直接的优化方法，暂时只记录日志
+        Debug.Log($"[EnemySpawnerAdapter] 建议优化对象池大小到: {newSize}");
+    }
+    
+    public void PreloadPool(int count)
+    {
+        // EnemySpawner在启动时已经预加载，这里只记录
+        Debug.Log($"[EnemySpawnerAdapter] 预加载请求: {count} 个敌人");
+    }
+    
+    public void ClearPool()
+    {
+        if (enemySpawner != null)
+        {
+            enemySpawner.ClearAllEnemies();
+        }
+    }
+    
+    public string GetDetailedStats()
+    {
+        if (enemySpawner == null) return "EnemySpawner不可用";
+        
+        return $"敌人池状态:\n" +
+               $"- 活跃敌人: {ActiveCount}\n" +
+               $"- 池中可用: {AvailableCount}\n" +
+               $"- 总生成数: {enemySpawner.TotalSpawned}\n" +
+               $"- 当前难度: {enemySpawner.CurrentDifficulty}";
+    }
+}
 
-// SwordAfterimagePoolAdapter 临时移除 - 等待SwordAfterimagePool类实现
+// SwordAfterimagePool暂时未实现 - 等待残影效果系统实现
