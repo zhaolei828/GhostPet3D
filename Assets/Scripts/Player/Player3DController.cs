@@ -309,7 +309,7 @@ public class Player3DController : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         
         Debug.Log("玩家死亡！");
-        // GameManager.Instance?.RespawnPlayer(); // 临时注释，等MCP配置好再启用
+        GameManager.Instance?.RespawnPlayer(); // 恢复玩家重生系统
     }
     
     public void Respawn(Vector3 spawnPosition)

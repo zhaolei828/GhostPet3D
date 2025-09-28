@@ -21,18 +21,23 @@ public class OrbitingSwordManager : MonoBehaviour
     private List<Transform> orbitingSwords = new List<Transform>();
     private Transform player;
     private float currentAngle = 0f;
+    private bool isInitialized = false;
     
     // 单例
     public static OrbitingSwordManager Instance { get; private set; }
     
     private void Awake()
     {
+        Debug.Log("[OrbitingSwordManager] Awake开始执行");
+        
         if (Instance == null)
         {
             Instance = this;
+            Debug.Log("[OrbitingSwordManager] 设置单例实例");
         }
         else
         {
+            Debug.Log("[OrbitingSwordManager] 单例已存在，销毁重复对象");
             Destroy(gameObject);
             return;
         }
@@ -42,6 +47,7 @@ public class OrbitingSwordManager : MonoBehaviour
         if (playerObj != null)
         {
             player = playerObj.transform;
+            Debug.Log($"[OrbitingSwordManager] 找到Player对象: {playerObj.name}");
         }
         else
         {
@@ -51,11 +57,19 @@ public class OrbitingSwordManager : MonoBehaviour
     
     private void Start()
     {
-        CreateOrbitingSwords();
+        Debug.Log("[OrbitingSwordManager] Start方法执行");
     }
     
     private void Update()
     {
+        // 第一帧初始化
+        if (!isInitialized)
+        {
+            Debug.Log("[OrbitingSwordManager] Update中进行初始化");
+            CreateOrbitingSwords();
+            isInitialized = true;
+        }
+        
         UpdateOrbitingSwords();
     }
     
@@ -67,6 +81,12 @@ public class OrbitingSwordManager : MonoBehaviour
         if (orbitingSwordPrefab == null)
         {
             Debug.LogWarning("[OrbitingSwordManager] 环绕飞剑预制件未设置！");
+            return;
+        }
+        
+        if (player == null)
+        {
+            Debug.LogError("[OrbitingSwordManager] Player对象未找到，无法创建环绕飞剑！");
             return;
         }
         
@@ -232,8 +252,8 @@ public class OrbitingSwordManager : MonoBehaviour
         
         Debug.Log($"[OrbitingSwordManager] 发射环绕飞剑 {index + 1}");
         
-        // 5秒后重新生成飞剑（匹配FlyingSword3D的lifeTime）
-        StartCoroutine(RegenerateSword(index, 5f));
+        // 1秒后重新生成飞剑（确保快速补充，保持攻击连续性）
+        StartCoroutine(RegenerateSword(index, 1f));
     }
     
     /// <summary>
