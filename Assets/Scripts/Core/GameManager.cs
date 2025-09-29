@@ -50,23 +50,23 @@ public class GameManager : MonoBehaviour
         
         Debug.Log($"[GameManager] 环境材质加载: 草={grassMaterial != null}, 黑岩={blackRockMaterial != null}, 灰岩={grayRockMaterial != null}");
         
-        // 创建草丛装饰 (8个)
-        CreateGrassDecoration(new Vector3(3, 0.15f, 2), grassMaterial);
-        CreateGrassDecoration(new Vector3(-2, 0.15f, 4), grassMaterial);
-        CreateGrassDecoration(new Vector3(1, 0.15f, -3), grassMaterial);
-        CreateGrassDecoration(new Vector3(5, 0.15f, 1), grassMaterial);
-        CreateGrassDecoration(new Vector3(-4, 0.15f, -2), grassMaterial);
-        CreateGrassDecoration(new Vector3(-1, 0.15f, 3), grassMaterial);
-        CreateGrassDecoration(new Vector3(2, 0.15f, -4), grassMaterial);
-        CreateGrassDecoration(new Vector3(-3, 0.15f, 2), grassMaterial);
+        // 创建草丛装饰 (8个) - 稍微嵌入地面，像从雪中长出
+        CreateGrassDecoration(new Vector3(3, 0.08f, 2), grassMaterial);
+        CreateGrassDecoration(new Vector3(-2, 0.08f, 4), grassMaterial);
+        CreateGrassDecoration(new Vector3(1, 0.08f, -3), grassMaterial);
+        CreateGrassDecoration(new Vector3(5, 0.08f, 1), grassMaterial);
+        CreateGrassDecoration(new Vector3(-4, 0.08f, -2), grassMaterial);
+        CreateGrassDecoration(new Vector3(-1, 0.08f, 3), grassMaterial);
+        CreateGrassDecoration(new Vector3(2, 0.08f, -4), grassMaterial);
+        CreateGrassDecoration(new Vector3(-3, 0.08f, 2), grassMaterial);
         
-        // 创建岩石装饰 (6个)
-        CreateRockDecoration(new Vector3(4, 0.15f, -1), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(-3, 0.15f, 1), grayRockMaterial, "GrayRock");
-        CreateRockDecoration(new Vector3(0, 0.15f, 5), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(2, 0.15f, 3), grayRockMaterial, "GrayRock");
-        CreateRockDecoration(new Vector3(-2, 0.15f, -1), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(1, 0.15f, 2), grayRockMaterial, "GrayRock");
+        // 创建岩石装饰 (6个) - 半埋在雪中的效果
+        CreateRockDecoration(new Vector3(4, 0.1f, -1), blackRockMaterial, "BlackRock");
+        CreateRockDecoration(new Vector3(-3, 0.1f, 1), grayRockMaterial, "GrayRock");
+        CreateRockDecoration(new Vector3(0, 0.1f, 5), blackRockMaterial, "BlackRock");
+        CreateRockDecoration(new Vector3(2, 0.1f, 3), grayRockMaterial, "GrayRock");
+        CreateRockDecoration(new Vector3(-2, 0.1f, -1), blackRockMaterial, "BlackRock");
+        CreateRockDecoration(new Vector3(1, 0.1f, 2), grayRockMaterial, "GrayRock");
         
         Debug.Log("[GameManager] 环境装饰物创建完成: 8个草丛, 6个岩石");
     }
@@ -75,8 +75,15 @@ public class GameManager : MonoBehaviour
     {
         GameObject grass = GameObject.CreatePrimitive(PrimitiveType.Cube);
         grass.name = "SnowGrass";
-        grass.transform.position = position;
-        grass.transform.localScale = new Vector3(0.8f, 0.3f, 0.8f);
+        
+        // 添加高度随机变化，让草丛高低错落更自然
+        Vector3 adjustedPosition = position;
+        adjustedPosition.y += Random.Range(-0.02f, 0.02f); // ±2cm的高度变化
+        grass.transform.position = adjustedPosition;
+        
+        // 尺寸随机变化，更有生机
+        float scaleVariation = Random.Range(0.85f, 1.15f);
+        grass.transform.localScale = new Vector3(0.8f * scaleVariation, 0.3f * scaleVariation, 0.8f * scaleVariation);
         grass.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
         
         if (material != null)
@@ -92,9 +99,16 @@ public class GameManager : MonoBehaviour
     {
         GameObject rock = GameObject.CreatePrimitive(PrimitiveType.Cube);
         rock.name = name;
-        rock.transform.position = position;
-        rock.transform.localScale = new Vector3(0.6f, 0.25f, 0.6f);
-        rock.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), Random.Range(-10, 10));
+        
+        // 添加位置随机变化，让岩石深埋程度不同
+        Vector3 adjustedPosition = position;
+        adjustedPosition.y += Random.Range(-0.03f, 0.02f); // 有些岩石更深埋在雪中
+        rock.transform.position = adjustedPosition;
+        
+        // 尺寸随机变化，大小不一的岩石更真实
+        float scaleVariation = Random.Range(0.8f, 1.3f);
+        rock.transform.localScale = new Vector3(0.6f * scaleVariation, 0.25f * scaleVariation, 0.6f * scaleVariation);
+        rock.transform.rotation = Quaternion.Euler(Random.Range(-10, 10), Random.Range(0, 360), Random.Range(-10, 10));
         
         if (material != null)
         {
