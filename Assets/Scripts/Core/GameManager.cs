@@ -43,27 +43,31 @@ public class GameManager : MonoBehaviour
     /// </summary>
     private void CreateEnvironmentDecorations()
     {
-        // 加载材质
-        Material grassMaterial = Resources.Load<Material>("Environment/SnowGrassMaterial");
+        // 加载沙地主题材质
+        Material cactusMaterial = Resources.Load<Material>("Materials/CactusMaterial");
+        if (cactusMaterial == null) cactusMaterial = Resources.Load<Material>("CactusMaterial");
+        
+        Material sandstoneRockMaterial = Resources.Load<Material>("Materials/SandstoneRockMaterial");
+        if (sandstoneRockMaterial == null) sandstoneRockMaterial = Resources.Load<Material>("SandstoneRockMaterial");
+        
         Material blackRockMaterial = Resources.Load<Material>("Environment/BlackRockMaterial");
-        Material grayRockMaterial = Resources.Load<Material>("Environment/GrayRockMaterial");
         
-        Debug.Log($"[GameManager] 环境材质加载: 草={grassMaterial != null}, 黑岩={blackRockMaterial != null}, 灰岩={grayRockMaterial != null}");
+        Debug.Log($"[GameManager] 沙地环境材质加载: 仙人掌={cactusMaterial != null}, 沙岩={sandstoneRockMaterial != null}, 黑岩={blackRockMaterial != null}");
         
-        // 创建草丛装饰 (8个) - 随机位置分布
-        for (int i = 0; i < 8; i++)
+        // 创建仙人掌装饰 (6个) - 随机位置分布，沙地植物较少
+        for (int i = 0; i < 6; i++)
         {
             Vector3 randomPos = new Vector3(
                 Random.Range(-8f, 8f),    // X轴随机范围 -8到8米
-                0.08f,                    // Y轴固定高度
+                0.12f,                    // Y轴稍高一些，仙人掌比草高
                 Random.Range(-8f, 8f)     // Z轴随机范围 -8到8米  
             );
-            CreateGrassDecoration(randomPos, grassMaterial);
+            CreateCactusDecoration(randomPos, cactusMaterial);
         }
         
-        // 创建岩石装饰 (6个) - 随机位置和材质分布
-        Material[] rockMaterials = { blackRockMaterial, grayRockMaterial };
-        for (int i = 0; i < 6; i++)
+        // 创建岩石装饰 (8个) - 沙地中更多岩石，随机位置和材质分布
+        Material[] rockMaterials = { sandstoneRockMaterial, blackRockMaterial };
+        for (int i = 0; i < 8; i++)
         {
             Vector3 randomPos = new Vector3(
                 Random.Range(-8f, 8f),    // X轴随机范围 -8到8米
@@ -71,38 +75,39 @@ public class GameManager : MonoBehaviour
                 Random.Range(-8f, 8f)     // Z轴随机范围 -8到8米
             );
             
-            // 随机选择岩石材质
-            Material randomRockMaterial = rockMaterials[Random.Range(0, rockMaterials.Length)];
-            string rockName = (randomRockMaterial == blackRockMaterial) ? "BlackRock" : "GrayRock";
+            // 随机选择岩石材质，偏向沙岩(70%概率)
+            Material randomRockMaterial = (Random.Range(0f, 1f) < 0.7f) ? sandstoneRockMaterial : blackRockMaterial;
+            string rockName = (randomRockMaterial == sandstoneRockMaterial) ? "SandstoneRock" : "BlackRock";
             
             CreateRockDecoration(randomPos, randomRockMaterial, rockName);
         }
         
-        Debug.Log("[GameManager] 环境装饰物创建完成: 8个草丛, 6个岩石");
+        Debug.Log("[GameManager] 沙地环境装饰物创建完成: 6个仙人掌, 8个岩石");
     }
     
-    private void CreateGrassDecoration(Vector3 position, Material material)
+    private void CreateCactusDecoration(Vector3 position, Material material)
     {
-        GameObject grass = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        grass.name = "SnowGrass";
+        GameObject cactus = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cactus.name = "Cactus";
         
-        // 添加高度随机变化，让草丛高低错落更自然
+        // 添加高度随机变化，让仙人掌高低错落更自然
         Vector3 adjustedPosition = position;
-        adjustedPosition.y += Random.Range(-0.02f, 0.02f); // ±2cm的高度变化
-        grass.transform.position = adjustedPosition;
+        adjustedPosition.y += Random.Range(-0.03f, 0.03f); // ±3cm的高度变化
+        cactus.transform.position = adjustedPosition;
         
-        // 尺寸随机变化，更有生机
-        float scaleVariation = Random.Range(0.85f, 1.15f);
-        grass.transform.localScale = new Vector3(0.8f * scaleVariation, 0.3f * scaleVariation, 0.8f * scaleVariation);
-        grass.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+        // 仙人掌比草丛更高更窄，尺寸随机变化
+        float scaleVariation = Random.Range(0.8f, 1.3f);
+        float heightVariation = Random.Range(1.2f, 2.0f); // 仙人掌更高
+        cactus.transform.localScale = new Vector3(0.4f * scaleVariation, 0.6f * heightVariation, 0.4f * scaleVariation);
+        cactus.transform.rotation = Quaternion.Euler(Random.Range(-5, 5), Random.Range(0, 360), Random.Range(-5, 5)); // 轻微倾斜
         
         if (material != null)
         {
-            grass.GetComponent<MeshRenderer>().material = material;
+            cactus.GetComponent<MeshRenderer>().material = material;
         }
         
         // 移除碰撞体，避免影响游戏
-        Destroy(grass.GetComponent<BoxCollider>());
+        Destroy(cactus.GetComponent<BoxCollider>());
     }
     
     private void CreateRockDecoration(Vector3 position, Material material, string name)
