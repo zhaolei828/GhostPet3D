@@ -9,7 +9,7 @@ using System.Collections;
 public class EnemySpawner : MonoBehaviour
 {
     [Header("生成设置")]
-    [SerializeField] private GameObject[] enemyPrefabs; // 多种敌人类型：普通敌人和幽灵敌人
+    [SerializeField] private GameObject[] enemyPrefabs; // 支持多种敌人类型：普通敌人和幽灵敌人
     [SerializeField] private GameObject enemyPrefab; // 保持向后兼容
     [SerializeField] private Transform spawnParent; // 敌人父对象，用于组织层级
     [SerializeField] private Transform player;
