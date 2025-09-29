@@ -8,7 +8,8 @@ using System.Collections;
 public class EnemySpawner : MonoBehaviour
 {
     [Header("生成设置")]
-    [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private GameObject[] enemyPrefabs; // 多种敌人类型
+    [SerializeField] private GameObject enemyPrefab; // 保持向后兼容
     [SerializeField] private Transform spawnParent; // 敌人父对象，用于组织层级
     [SerializeField] private Transform player;
     
@@ -78,18 +79,29 @@ public class EnemySpawner : MonoBehaviour
         }
         
         // 自动查找敌人预制件模板
-        if (enemyPrefab == null)
+        if ((enemyPrefabs == null || enemyPrefabs.Length == 0) && enemyPrefab == null)
         {
-            GameObject enemyTemplate = GameObject.FindGameObjectWithTag("Enemy");
-            if (enemyTemplate != null)
+            GameObject[] enemyTemplates = GameObject.FindGameObjectsWithTag("Enemy");
+            if (enemyTemplates.Length > 0)
             {
-                enemyPrefab = enemyTemplate;
-                Debug.Log($"[EnemySpawner] 找到敌人模板: {enemyTemplate.name}");
+                enemyPrefabs = new GameObject[enemyTemplates.Length];
+                for (int i = 0; i < enemyTemplates.Length; i++)
+                {
+                    enemyPrefabs[i] = enemyTemplates[i];
+                }
+                Debug.Log($"[EnemySpawner] 找到 {enemyTemplates.Length} 种敌人模板");
             }
             else
             {
                 Debug.LogError("[EnemySpawner] 未找到Enemy标签的游戏对象作为模板！");
             }
+        }
+        
+        // 如果只有单一敌人预制体，转换为数组
+        if (enemyPrefabs == null && enemyPrefab != null)
+        {
+            enemyPrefabs = new GameObject[] { enemyPrefab };
+            Debug.Log($"[EnemySpawner] 单一敌人模式: {enemyPrefab.name}");
         }
         
         // 创建敌人父对象
@@ -127,20 +139,31 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     private void InitializeObjectPool()
     {
-        if (enemyPrefab == null)
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0)
         {
             Debug.LogError("[EnemySpawner] 敌人预制件未设置！");
             return;
         }
         
-        for (int i = 0; i < poolSize; i++)
+        // 为每种敌人类型平均分配对象池空间
+        int poolPerType = poolSize / enemyPrefabs.Length;
+        int remainder = poolSize % enemyPrefabs.Length;
+        
+        for (int typeIndex = 0; typeIndex < enemyPrefabs.Length; typeIndex++)
         {
-            GameObject enemy = Instantiate(enemyPrefab, spawnParent);
-            enemy.SetActive(false);
-            enemyPool.Enqueue(enemy);
+            if (enemyPrefabs[typeIndex] == null) continue;
+            
+            int currentTypePool = poolPerType + (typeIndex < remainder ? 1 : 0);
+            
+            for (int i = 0; i < currentTypePool; i++)
+            {
+                GameObject enemy = Instantiate(enemyPrefabs[typeIndex], spawnParent);
+                enemy.SetActive(false);
+                enemyPool.Enqueue(enemy);
+            }
         }
         
-        Debug.Log($"[EnemySpawner] 对象池初始化完成，预创建 {poolSize} 个敌人对象");
+        Debug.Log($"[EnemySpawner] 对象池初始化完成，预创建 {poolSize} 个敌人对象 ({enemyPrefabs.Length} 种类型)");
     }
     
     /// <summary>
@@ -185,11 +208,14 @@ public class EnemySpawner : MonoBehaviour
     private void SpawnEnemy()
     {
         if (player == null) return;
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0) return;
         
         Vector3 spawnPosition = GetRandomSpawnPosition();
         if (spawnPosition == Vector3.zero) return; // 未找到合适位置
         
-        GameObject enemy = GetEnemyFromPool();
+        // 随机选择敌人类型
+        GameObject selectedPrefab = GetRandomEnemyPrefab();
+        GameObject enemy = GetEnemyFromPool(selectedPrefab);
         if (enemy == null) return;
         
         // 设置位置和状态
@@ -204,25 +230,50 @@ public class EnemySpawner : MonoBehaviour
         totalSpawned++;
         lastSpawnTime = Time.time;
         
-        Debug.Log($"[EnemySpawner] 生成敌人 #{totalSpawned} 在位置 {spawnPosition}");
+        Debug.Log($"[EnemySpawner] 生成敌人 #{totalSpawned} ({enemy.name}) 在位置 {spawnPosition}");
     }
     
     /// <summary>
-    /// 从对象池获取敌人
+    /// 从对象池获取敌人（重载方法支持特定预制体）
     /// </summary>
-    private GameObject GetEnemyFromPool()
+    private GameObject GetEnemyFromPool(GameObject preferredPrefab = null)
     {
         if (useObjectPool && enemyPool.Count > 0)
         {
             return enemyPool.Dequeue();
         }
-        else if (enemyPrefab != null)
+        else if (preferredPrefab != null)
         {
             // 对象池用完了，直接创建新的
-            return Instantiate(enemyPrefab, spawnParent);
+            return Instantiate(preferredPrefab, spawnParent);
+        }
+        else if (enemyPrefabs != null && enemyPrefabs.Length > 0)
+        {
+            // 随机选择一个预制体
+            GameObject randomPrefab = GetRandomEnemyPrefab();
+            return Instantiate(randomPrefab, spawnParent);
         }
         
         return null;
+    }
+    
+    /// <summary>
+    /// 随机选择敌人预制体
+    /// </summary>
+    private GameObject GetRandomEnemyPrefab()
+    {
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0) return null;
+        
+        List<GameObject> validPrefabs = new List<GameObject>();
+        foreach (var prefab in enemyPrefabs)
+        {
+            if (prefab != null) validPrefabs.Add(prefab);
+        }
+        
+        if (validPrefabs.Count == 0) return null;
+        
+        int randomIndex = Random.Range(0, validPrefabs.Count);
+        return validPrefabs[randomIndex];
     }
     
     /// <summary>
