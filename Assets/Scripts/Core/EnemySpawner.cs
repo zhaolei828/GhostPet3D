@@ -4,6 +4,7 @@ using System.Collections;
 
 /// <summary>
 /// 智能敌人生成器 - 支持对象池、波次生成、性能优化
+/// 现已支持多种敌人类型随机生成：SmartEnemy 和 GhostEnemy
 /// </summary>
 public class EnemySpawner : MonoBehaviour
 {
