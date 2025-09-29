@@ -17,11 +17,10 @@ public class GameManager : MonoBehaviour
     
     private void Awake()
     {
-        // 单例模式
+        // 单例模式（场景级别，不跨场景保持）
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
