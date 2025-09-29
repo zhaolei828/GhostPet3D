@@ -4,7 +4,7 @@ using System.Collections;
 
 /// <summary>
 /// 智能敌人生成器 - 支持对象池、波次生成、性能优化
-/// 现已支持多种敌人类型随机生成：SmartEnemy 和 GhostEnemy
+/// 现已支持多种敌人类型随机生成：SmartEnemy(近战敌人) 和 GhostEnemy(幽灵敌人)
 /// </summary>
 public class EnemySpawner : MonoBehaviour
 {
@@ -79,31 +79,7 @@ public class EnemySpawner : MonoBehaviour
             }
         }
         
-        // 自动查找敌人预制件模板
-        if ((enemyPrefabs == null || enemyPrefabs.Length == 0) && enemyPrefab == null)
-        {
-            GameObject[] enemyTemplates = GameObject.FindGameObjectsWithTag("Enemy");
-            if (enemyTemplates.Length > 0)
-            {
-                enemyPrefabs = new GameObject[enemyTemplates.Length];
-                for (int i = 0; i < enemyTemplates.Length; i++)
-                {
-                    enemyPrefabs[i] = enemyTemplates[i];
-                }
-                Debug.Log($"[EnemySpawner] 找到 {enemyTemplates.Length} 种敌人模板");
-            }
-            else
-            {
-                Debug.LogError("[EnemySpawner] 未找到Enemy标签的游戏对象作为模板！");
-            }
-        }
-        
-        // 如果只有单一敌人预制体，转换为数组
-        if (enemyPrefabs == null && enemyPrefab != null)
-        {
-            enemyPrefabs = new GameObject[] { enemyPrefab };
-            Debug.Log($"[EnemySpawner] 单一敌人模式: {enemyPrefab.name}");
-        }
+        // 注意：敌人预制体配置现在在 Start() 方法中的 EnsureEnemyPrefabsConfiguration() 中处理
         
         // 创建敌人父对象
         if (spawnParent == null)
@@ -115,6 +91,9 @@ public class EnemySpawner : MonoBehaviour
     
     private void Start()
     {
+        // 确保敌人预制体配置正确
+        EnsureEnemyPrefabsConfiguration();
+        
         if (useObjectPool)
         {
             InitializeObjectPool();
@@ -132,6 +111,41 @@ public class EnemySpawner : MonoBehaviour
         if (enableDynamicDifficulty)
         {
             StartCoroutine(DynamicDifficultyAdjustment());
+        }
+    }
+    
+    /// <summary>
+    /// 确保敌人预制体配置正确
+    /// </summary>
+    private void EnsureEnemyPrefabsConfiguration()
+    {
+        // 如果敌人预制体数组为空，尝试从场景中查找
+        if (enemyPrefabs == null || enemyPrefabs.Length == 0)
+        {
+            GameObject[] enemyTemplates = GameObject.FindGameObjectsWithTag("Enemy");
+            if (enemyTemplates.Length > 0)
+            {
+                enemyPrefabs = new GameObject[enemyTemplates.Length];
+                for (int i = 0; i < enemyTemplates.Length; i++)
+                {
+                    enemyPrefabs[i] = enemyTemplates[i];
+                }
+                Debug.Log($"[EnemySpawner] 自动配置：找到 {enemyTemplates.Length} 种敌人模板");
+                foreach (var enemy in enemyTemplates)
+                {
+                    Debug.Log($"[EnemySpawner] - {enemy.name} (标签: {enemy.tag})");
+                }
+            }
+            else if (enemyPrefab != null)
+            {
+                // 如果有单一敌人预制体，转换为数组
+                enemyPrefabs = new GameObject[] { enemyPrefab };
+                Debug.Log($"[EnemySpawner] 单一敌人模式: {enemyPrefab.name}");
+            }
+            else
+            {
+                Debug.LogError("[EnemySpawner] 未找到任何敌人模板！请在场景中添加标记为'Enemy'的游戏对象，或在Inspector中设置敌人预制体。");
+            }
         }
     }
     
