@@ -50,23 +50,33 @@ public class GameManager : MonoBehaviour
         
         Debug.Log($"[GameManager] 环境材质加载: 草={grassMaterial != null}, 黑岩={blackRockMaterial != null}, 灰岩={grayRockMaterial != null}");
         
-        // 创建草丛装饰 (8个) - 稍微嵌入地面，像从雪中长出
-        CreateGrassDecoration(new Vector3(3, 0.08f, 2), grassMaterial);
-        CreateGrassDecoration(new Vector3(-2, 0.08f, 4), grassMaterial);
-        CreateGrassDecoration(new Vector3(1, 0.08f, -3), grassMaterial);
-        CreateGrassDecoration(new Vector3(5, 0.08f, 1), grassMaterial);
-        CreateGrassDecoration(new Vector3(-4, 0.08f, -2), grassMaterial);
-        CreateGrassDecoration(new Vector3(-1, 0.08f, 3), grassMaterial);
-        CreateGrassDecoration(new Vector3(2, 0.08f, -4), grassMaterial);
-        CreateGrassDecoration(new Vector3(-3, 0.08f, 2), grassMaterial);
+        // 创建草丛装饰 (8个) - 随机位置分布
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 randomPos = new Vector3(
+                Random.Range(-8f, 8f),    // X轴随机范围 -8到8米
+                0.08f,                    // Y轴固定高度
+                Random.Range(-8f, 8f)     // Z轴随机范围 -8到8米  
+            );
+            CreateGrassDecoration(randomPos, grassMaterial);
+        }
         
-        // 创建岩石装饰 (6个) - 半埋在雪中的效果
-        CreateRockDecoration(new Vector3(4, 0.1f, -1), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(-3, 0.1f, 1), grayRockMaterial, "GrayRock");
-        CreateRockDecoration(new Vector3(0, 0.1f, 5), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(2, 0.1f, 3), grayRockMaterial, "GrayRock");
-        CreateRockDecoration(new Vector3(-2, 0.1f, -1), blackRockMaterial, "BlackRock");
-        CreateRockDecoration(new Vector3(1, 0.1f, 2), grayRockMaterial, "GrayRock");
+        // 创建岩石装饰 (6个) - 随机位置和材质分布
+        Material[] rockMaterials = { blackRockMaterial, grayRockMaterial };
+        for (int i = 0; i < 6; i++)
+        {
+            Vector3 randomPos = new Vector3(
+                Random.Range(-8f, 8f),    // X轴随机范围 -8到8米
+                0.1f,                     // Y轴固定高度
+                Random.Range(-8f, 8f)     // Z轴随机范围 -8到8米
+            );
+            
+            // 随机选择岩石材质
+            Material randomRockMaterial = rockMaterials[Random.Range(0, rockMaterials.Length)];
+            string rockName = (randomRockMaterial == blackRockMaterial) ? "BlackRock" : "GrayRock";
+            
+            CreateRockDecoration(randomPos, randomRockMaterial, rockName);
+        }
         
         Debug.Log("[GameManager] 环境装饰物创建完成: 8个草丛, 6个岩石");
     }
