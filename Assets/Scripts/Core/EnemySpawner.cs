@@ -55,6 +55,9 @@ public class EnemySpawner : MonoBehaviour
     public int TotalSpawned => totalSpawned;
     public float CurrentDifficulty => currentDifficultyLevel;
     
+    // 生成控制标志
+    private bool isSpawning = true;
+    
     private void Awake()
     {
         if (Instance == null)
@@ -203,6 +206,12 @@ public class EnemySpawner : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(spawnInterval);
+            
+            // 检查是否允许生成
+            if (!isSpawning)
+            {
+                continue; // 如果停止生成，跳过本次循环
+            }
             
             if (activeEnemies.Count < maxActiveEnemies && player != null)
             {
@@ -466,6 +475,24 @@ public class EnemySpawner : MonoBehaviour
     public string GetSpawnStats()
     {
         return $"活跃敌人: {activeEnemies.Count}/{maxActiveEnemies} | 总生成: {totalSpawned} | 总回收: {totalRecycled} | 难度: {currentDifficultyLevel} | 对象池: {enemyPool.Count}";
+    }
+    
+    /// <summary>
+    /// 停止敌人生成（游戏结束时调用）
+    /// </summary>
+    public void StopSpawning()
+    {
+        isSpawning = false;
+        Debug.Log("[EnemySpawner] 敌人生成已停止");
+    }
+    
+    /// <summary>
+    /// 恢复敌人生成
+    /// </summary>
+    public void ResumeSpawning()
+    {
+        isSpawning = true;
+        Debug.Log("[EnemySpawner] 敌人生成已恢复");
     }
     
     // 调试可视化

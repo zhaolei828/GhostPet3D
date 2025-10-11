@@ -305,12 +305,12 @@ public class DamageNumberPool : MonoBehaviour
             Debug.Log("[DamageNumberPool] 创建了新的Canvas");
         }
         
-        // 创建一个临时预制体
-        GameObject tempPrefab = new GameObject("TempDamageNumberPrefab");
+        // 运行时动态创建伤害数字预制体（设计决策：避免资源依赖，提高灵活性）
+        GameObject tempPrefab = new GameObject("DamageNumberPrefab");
         tempPrefab.AddComponent<DamageNumber>();
         tempPrefab.SetActive(false);
         
-        // 直接创建对象池，使用临时预制体
+        // 直接创建对象池，使用动态预制体
         damageNumberPool = new ObjectPool<DamageNumber>(
             prefab: tempPrefab,
             poolParent: poolParent,

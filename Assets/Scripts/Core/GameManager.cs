@@ -171,6 +171,58 @@ public class GameManager : MonoBehaviour
     public void GameOver()
     {
         Debug.Log("[GameManager] 游戏结束！");
-        // TODO: 实现游戏结束逻辑
+        
+        // 停止游戏时间
+        Time.timeScale = 0f;
+        
+        // 禁用玩家输入
+        if (player != null)
+        {
+            player.enabled = false;
+        }
+        
+        // 停止敌人生成器
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.StopSpawning();
+        }
+        
+        // 显示游戏结束UI
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowGameOverUI();
+        }
+        
+        Debug.Log("[GameManager] 游戏已暂停，等待玩家操作");
+    }
+    
+    /// <summary>
+    /// 重新开始游戏
+    /// </summary>
+    public void RestartGame()
+    {
+        Debug.Log("[GameManager] 重新开始游戏");
+        
+        // 恢复游戏时间
+        Time.timeScale = 1f;
+        
+        // 重新加载当前场景
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+        );
+    }
+    
+    /// <summary>
+    /// 退出游戏
+    /// </summary>
+    public void QuitGame()
+    {
+        Debug.Log("[GameManager] 退出游戏");
+        
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #else
+        Application.Quit();
+        #endif
     }
 }

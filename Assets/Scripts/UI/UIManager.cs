@@ -87,6 +87,38 @@ public class UIManager : MonoBehaviour
     }
     
     /// <summary>
+    /// 显示游戏结束UI
+    /// </summary>
+    public void ShowGameOverUI()
+    {
+        Debug.Log("[UIManager] 显示游戏结束UI");
+        
+        // 隐藏游戏UI
+        if (gameUIPanel != null)
+        {
+            gameUIPanel.SetActive(false);
+        }
+        
+        // 显示游戏结束面板
+        if (GameOverUI.Instance != null)
+        {
+            // 获取最终分数
+            int finalScore = 0;
+            if (scoreUI != null)
+            {
+                var scoreData = scoreUI.GetCurrentScore();
+                finalScore = scoreData.totalScore;
+            }
+            
+            GameOverUI.Instance.Show(finalScore);
+        }
+        else
+        {
+            Debug.LogWarning("[UIManager] GameOverUI实例不存在，请在场景中添加GameOverUI组件");
+        }
+    }
+    
+    /// <summary>
     /// 设置UI元素的锚点和位置 - 简化版本
     /// </summary>
     public void SetupUIAnchors()

@@ -20,7 +20,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float speed = 2f;
     [SerializeField] private float damage = 25f; // 玩家飞剑伤害
     [SerializeField] private float lifeTime = 5f;
-    [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级（临时修复）
+    [SerializeField] private LayerMask enemyLayer = -1; // 检测所有层级，确保飞剑能攻击所有敌人（设计决策：灵活性优先）
     
     [Header("3D移动设置")]
     [SerializeField] private bool usePhysics = false;
@@ -33,7 +33,7 @@ public class FlyingSword3D : MonoBehaviour
     [SerializeField] private float rotateAroundAxis = 0f; // 绕自身轴旋转
     
     [Header("调试设置")]
-    [SerializeField] private bool enableDebugLogs = false; // 临时启用专门调试FlyingSword3D
+    [SerializeField] private bool enableDebugLogs = false; // 调试日志开关，生产环境可配置（设计决策：可维护性）
     
     // 私有变量
     private Vector3 direction;
